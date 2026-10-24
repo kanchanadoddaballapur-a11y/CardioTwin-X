@@ -23,9 +23,9 @@ All mandatory submission deliverables specified in the evaluation requirements a
 | 6 | **Technical Stack** | ✅ Included | [Section 6](#6-technical-stack) | [Tech Stack Matrix](#6-technical-stack) |
 | 7 | **AI/ML Model or Framework Details** | ✅ Included | [Section 7](#7-aiml-model--framework-details) | [Physiological & ML Formulations](#7-aiml-model--framework-details) |
 | 8 | **15-20 Min Unlisted Demo Video** | ✅ Included | [Section 8](#8-demonstration-video-unlisted-youtube) | [Watch Unlisted Demo Video](https://youtu.be/kU8X7m6Lz9w) |
-| 9 | **Open-source License Details** | ✅ Included | [Section 9](#9-open-source-license-details) | [LICENSE](file:///c:/Users/SINCHANA/Downloads/CardioTwin-X-main/LICENSE) |
-| 10 | **Architecture Diagram (PDF / PPT)** | ✅ Included | [Section 10](#10-architecture-diagram-pdf--ppt-formats) | [Download PDF](file:///c:/Users/SINCHANA/Downloads/CardioTwin-X-main/docs/architecture/CardioTwin_Architecture_Diagram.pdf) • [Download PPTX](file:///c:/Users/SINCHANA/Downloads/CardioTwin-X-main/docs/architecture/CardioTwin_Architecture_Diagram.pptx) |
-| 11 | **Presentation (PDF / PPT)** | ✅ Included | [Section 11](#11-presentation-pdf--ppt-formats) | [Download PDF](file:///c:/Users/SINCHANA/Downloads/CardioTwin-X-main/docs/presentation/CardioTwin_Project_Presentation.pdf) • [Download PPTX](file:///c:/Users/SINCHANA/Downloads/CardioTwin-X-main/docs/presentation/CardioTwin_Project_Presentation.pptx) |
+| 9 | **Open-source License Details** | ✅ Included | [Section 9](#9-open-source-license-details) | [LICENSE](LICENSE) |
+| 10 | **Architecture Diagram (PDF / PPT)** | ✅ Included | [Section 10](#10-architecture-diagram-pdf--ppt-formats) | [Download PDF](docs/architecture/CardioTwin_Architecture_Diagram.pdf) • [Download PPTX](docs/architecture/CardioTwin_Architecture_Diagram.pptx) |
+| 11 | **Presentation (PDF / PPT)** | ✅ Included | [Section 11](#11-presentation-pdf--ppt-formats) | [View PDF (Google Drive)](https://drive.google.com/file/d/1dg_ermdvzWejSIxMOYWh7rDlK0iRY1K-/view?usp=drivesdk) • [Download PPTX](docs/presentation/CardioTwin_Project_Presentation.pptx) |
 | 12 | **Public Accessibility Verification** | ✅ Verified | [Section 12](#12-public-accessibility-verification) | [Access Statement](#12-public-accessibility-verification) |
 
 ---
@@ -50,9 +50,10 @@ CardioTwin X introduces a **Mahalanobis Innovation Divergence Engine** to detect
 | Name | Role | Email | GitHub / Profiles |
 |---|---|---|---|
 | **Kanchana A** | Lead Author & System Architect | [kanchanadoddaballapur@gmail.com](mailto:kanchanadoddaballapur@gmail.com) | [@kanchanadoddaballapur-a11y](https://github.com/kanchanadoddaballapur-a11y) |
-| **Sinchana** | ML & Digital Twin Developer | [sinchanaralankar@gmail.com](mailto:sinchanaralankar@gmail.com) | [@sinchanaralankar-droid](https://github.com/sinchanaralankar-droid)  |
-| **Bhanushree M** | Research & Development Contributor | gbm3914@gmail.com| [@gbmgam] |
-| **Bhuvana H R** | Research & Development Contributor | bhugowsharam@gmail.com  |[@bhuvana252007] |
+| **Sinchana** | ML & Digital Twin Developer | [sinchanaralankar@gmail.com](mailto:sinchanaralankar@gmail.com) | [@sinchanaralankar-droid](https://github.com/sinchanaralankar-droid) (USN: 1TE25CS281) |
+| **Bhanushree M** | Research & Development Contributor | Contact via Team | BMS Institute of Technology and Management |
+| **Bhuvana H R** | Research & Development Contributor | Contact via Team | BMS Institute of Technology and Management |
+
 ---
 
 ## 3. College / Incubator Information
@@ -198,9 +199,8 @@ A comprehensive **15-20 minute demonstration video** has been produced, uploaded
 CardioTwin X is proudly released under the **MIT Open-Source License**, ensuring complete freedom for academic research, clinical experimentation, and open-source derivative development.
 
 - **License Type:** MIT License
-- **Full License File:** [`LICENSE`](file:///c:/Users/SINCHANA/Downloads/CardioTwin-X-main/LICENSE)
-- **Permissions:** Commercial use, modification, distribution, private use, and sublicensing.
-- **Conditions:** Inclusion of original copyright notice and disclaimer.
+- **Full License File:** [`LICENSE`](LICENSE)
+- **Permissions:** Commercial use, modification, distribution, private use, and sublicensing.- **Conditions:** Inclusion of original copyright notice and disclaimer.
 - **Medical Disclaimer:** *CardioTwin X is a computational research prototype validated on synthetic hemodynamic streams. It is intended for exploratory and educational research and does not constitute certified clinical diagnostic software.*
 
 ---
@@ -212,9 +212,9 @@ The complete end-to-end architecture diagram illustrates the flow across **Patie
 ![CardioTwin X System Architecture](docs/architecture/CardioTwin_Architecture_Diagram.png)
 
 ### Download Public Architecture Deliverables:
-- 📄 **PDF Format:** [CardioTwin_Architecture_Diagram.pdf](file:///c:/Users/SINCHANA/Downloads/CardioTwin-X-main/docs/architecture/CardioTwin_Architecture_Diagram.pdf)
-- 📊 **PowerPoint (PPT/PPTX) Format:** [CardioTwin_Architecture_Diagram.pptx](file:///c:/Users/SINCHANA/Downloads/CardioTwin-X-main/docs/architecture/CardioTwin_Architecture_Diagram.pptx)
-- 🖼️ **High-Resolution PNG:** [CardioTwin_Architecture_Diagram.png](file:///c:/Users/SINCHANA/Downloads/CardioTwin-X-main/docs/architecture/CardioTwin_Architecture_Diagram.png)
+- 📄 **PDF Format:** [CardioTwin_Architecture_Diagram.pdf](docs/architecture/CardioTwin_Architecture_Diagram.pdf)
+- 📊 **PowerPoint (PPT/PPTX) Format:** [CardioTwin_Architecture_Diagram.pptx](docs/architecture/CardioTwin_Architecture_Diagram.pptx)
+- 🖼️ **High-Resolution PNG:** [CardioTwin_Architecture_Diagram.png](docs/architecture/CardioTwin_Architecture_Diagram.png)
 
 ```mermaid
 flowchart TD
@@ -253,8 +253,8 @@ flowchart TD
 A comprehensive 9-slide technical presentation deck covering the project background, problem formulation, clinical use cases, mathematical derivations, divergence algorithms, 30-patient cohort validation outcomes, and roadmap is provided in both PDF and PPTX formats.
 
 ### Download Public Presentation Deliverables:
-- 📄 **Presentation in PDF Format:** [CardioTwin_Project_Presentation.pdf](file:///c:/Users/SINCHANA/Downloads/CardioTwin-X-main/docs/presentation/CardioTwin_Project_Presentation.pdf)
-- 📊 **Presentation in PowerPoint (PPTX) Format:** [CardioTwin_Project_Presentation.pptx](file:///c:/Users/SINCHANA/Downloads/CardioTwin-X-main/docs/presentation/CardioTwin_Project_Presentation.pptx)
+- 📄 **Presentation / Concept Document (PDF - Google Drive):** [https://drive.google.com/file/d/1dg_ermdvzWejSIxMOYWh7rDlK0iRY1K-/view?usp=drivesdk](https://drive.google.com/file/d/1dg_ermdvzWejSIxMOYWh7rDlK0iRY1K-/view?usp=drivesdk)
+- 📊 **Presentation in PowerPoint (PPTX) Format:** [CardioTwin_Project_Presentation.pptx](docs/presentation/CardioTwin_Project_Presentation.pptx)
 
 ### Slide Summary:
 1. **Title Slide:** CardioTwin X: Adaptive Simulation-Driven Cardiovascular Digital Twin
@@ -276,10 +276,10 @@ A comprehensive 9-slide technical presentation deck covering the project backgro
 
 - **GitHub Repository:** [https://github.com/kanchanadoddaballapur-a11y/CardioTwin-X](https://github.com/kanchanadoddaballapur-a11y/CardioTwin-X) (Public)
 - **Demo Video:** [https://youtu.be/kU8X7m6Lz9w](https://youtu.be/kU8X7m6Lz9w) (Unlisted YouTube — accessible to anyone with the link)
-- **Architecture PDF:** [CardioTwin_Architecture_Diagram.pdf](file:///c:/Users/SINCHANA/Downloads/CardioTwin-X-main/docs/architecture/CardioTwin_Architecture_Diagram.pdf) (Direct public file)
-- **Architecture PPTX:** [CardioTwin_Architecture_Diagram.pptx](file:///c:/Users/SINCHANA/Downloads/CardioTwin-X-main/docs/architecture/CardioTwin_Architecture_Diagram.pptx) (Direct public file)
-- **Presentation PDF:** [CardioTwin_Project_Presentation.pdf](file:///c:/Users/SINCHANA/Downloads/CardioTwin-X-main/docs/presentation/CardioTwin_Project_Presentation.pdf) (Direct public file)
-- **Presentation PPTX:** [CardioTwin_Project_Presentation.pptx](file:///c:/Users/SINCHANA/Downloads/CardioTwin-X-main/docs/presentation/CardioTwin_Project_Presentation.pptx) (Direct public file)
+- **Project Presentation / Concept Document (PDF - Google Drive):** [https://drive.google.com/file/d/1dg_ermdvzWejSIxMOYWh7rDlK0iRY1K-/view?usp=drivesdk](https://drive.google.com/file/d/1dg_ermdvzWejSIxMOYWh7rDlK0iRY1K-/view?usp=drivesdk)
+- **Architecture PDF:** [CardioTwin_Architecture_Diagram.pdf](docs/architecture/CardioTwin_Architecture_Diagram.pdf)
+- **Architecture PPTX:** [CardioTwin_Architecture_Diagram.pptx](docs/architecture/CardioTwin_Architecture_Diagram.pptx)
+- **Presentation PPTX:** [CardioTwin_Project_Presentation.pptx](docs/presentation/CardioTwin_Project_Presentation.pptx)
 
 ---
 
