@@ -117,9 +117,6 @@ class TwinSessionState:
 
     def step_forward(self, manual_obs: Optional[np.ndarray] = None) -> Optional[TwinCycleStep]:
         """Advance twin simulation by 1 minute with next synthetic or manual reading."""
-        if self.current_step >= self.total_steps and manual_obs is None:
-            return None
-
         if manual_obs is not None:
             # User manual reading entry
             row_time = datetime.now()
@@ -127,8 +124,10 @@ class TwinSessionState:
             episode = "Manual User Reading"
             is_anomaly = False
         else:
-            row = self.series_df.iloc[self.current_step]
-            row_time = row["timestamp"]
+            step_in_day = self.current_step % self.total_steps
+            day_offset = self.current_step // self.total_steps
+            row = self.series_df.iloc[step_in_day]
+            row_time = row["timestamp"] + timedelta(days=int(day_offset))
             episode = str(row["episode"])
             is_anomaly = bool(row["is_anomaly"])
 
@@ -138,6 +137,7 @@ class TwinSessionState:
                 obs = np.array([row["HR"], row["SBP"], row["DBP"]], dtype=np.float64)
 
             self.current_step += 1
+
 
         # 1. UKF Estimation Step
         ukf_res = self.ukf.step(obs)

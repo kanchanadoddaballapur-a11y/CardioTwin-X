@@ -209,7 +209,7 @@ if latest_step is None:
 # -----------------------------------------------------------------------------
 # Top Header Bar
 # -----------------------------------------------------------------------------
-header_col1, header_col2, header_col3 = st.columns([2.8, 1.4, 1.8])
+header_col1, header_col2, header_col3 = st.columns([2.6, 1.8, 1.6])
 
 with header_col1:
     st.markdown(
@@ -234,25 +234,96 @@ with header_col2:
     sync_time_str = latest_step.timestamp.strftime("%H:%M:%S") if latest_step else "08:00:00"
     st.markdown(
         f"""
-        <div style="padding-top: 6px;">
-            <span class="badge-sync">🟢 Last synced {sync_time_str} - Simulated stream</span>
+        <div style="padding-top: 10px;">
+            <span class="badge-sync">🟢 Last synced: {sync_time_str} · Simulated stream</span>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
 with header_col3:
-    col_t1, col_t2 = st.columns([1.2, 1.0])
+    col_t1, col_t2 = st.columns([1.3, 1.0])
     with col_t1:
-        is_live_toggle = st.toggle("Live Stream", value=st.session_state.auto_stream, key="live_stream_toggle")
+        is_live_toggle = st.toggle(
+            "Live",
+            value=st.session_state.auto_stream,
+            key="live_paused_toggle",
+            help="Toggle between Live streaming and Paused inspection",
+        )
         st.session_state.auto_stream = is_live_toggle
+        if is_live_toggle:
+            st.markdown('<span style="color: #059669; font-size: 0.82rem; font-weight: 700;">🟢 Live Mode</span>', unsafe_allow_html=True)
+        else:
+            st.markdown('<span style="color: #64748b; font-size: 0.82rem; font-weight: 700;">⏸️ Paused</span>', unsafe_allow_html=True)
     with col_t2:
-        if st.button("▶ Step (+1m)", help="Advance 1 minute manually"):
+        if st.button("▶ Step (+1m)", help="Advance simulation 1 minute manually"):
             twin_mgr.step_forward()
             st.rerun()
 
 
-# Small control row: Speed slider, Patient profile switcher, and Manual reading input
+# -----------------------------------------------------------------------------
+# One-Time Baseline Setup Step (Skippable with Defaults)
+# -----------------------------------------------------------------------------
+if "baseline_setup_complete" not in st.session_state:
+    st.session_state.baseline_setup_complete = False
+
+if not st.session_state.baseline_setup_complete:
+    st.markdown(
+        """
+        <div style="background: linear-gradient(135deg, #fff1f2 0%, #ffffff 100%); border: 1.5px solid #fecdd3; border-radius: 16px; padding: 20px 24px; margin-bottom: 22px; box-shadow: 0 4px 14px rgba(225, 29, 72, 0.06);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div>
+                    <h3 style="margin: 0; color: #e11d48; font-size: 1.25rem; font-weight: 700;">
+                        📋 One-Time Baseline Setup
+                    </h3>
+                    <div style="font-size: 0.88rem; color: #475569; margin-top: 2px;">
+                        Calibrate your digital twin with baseline cardiovascular and lifestyle metrics, or skip to use default values.
+                    </div>
+                </div>
+                <span class="badge-watch" style="font-size: 0.8rem;">Skippable · Defaults Available</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    with st.container():
+        b_col1, b_col2, b_col3 = st.columns([1.2, 1.2, 1.4])
+        with b_col1:
+            base_age = st.number_input("Patient Age", min_value=18, max_value=105, value=int(twin_mgr.patient_history.age), step=1)
+            base_notes = st.text_input("Medical History / Clinical Notes", value=str(twin_mgr.patient_history.notes))
+        with b_col2:
+            base_smoker = st.checkbox("Smoker Flag", value=bool(twin_mgr.patient_history.smoker))
+            base_alcohol = st.checkbox("Alcohol Consumption", value=bool(twin_mgr.patient_history.alcohol))
+            base_activity = st.selectbox("Lifestyle Activity Level", ["Active", "Moderate", "Sedentary"], index=0)
+        with b_col3:
+            st.markdown("<b>Optional Baseline BP (mmHg):</b>", unsafe_allow_html=True)
+            bp_sub1, bp_sub2 = st.columns(2)
+            with bp_sub1:
+                opt_sbp = st.number_input("Systolic BP", min_value=80.0, max_value=220.0, value=float(twin_mgr.patient_history.baseline_bp[0]), step=1.0)
+            with bp_sub2:
+                opt_dbp = st.number_input("Diastolic BP", min_value=50.0, max_value=140.0, value=float(twin_mgr.patient_history.baseline_bp[1]), step=1.0)
+
+        btn_col1, btn_col2, _ = st.columns([1.8, 2.0, 2.2])
+        with btn_col1:
+            if st.button("💾 Complete Baseline Setup", type="primary", use_container_width=True):
+                twin_mgr.patient_history.age = int(base_age)
+                twin_mgr.patient_history.smoker = bool(base_smoker)
+                twin_mgr.patient_history.alcohol = bool(base_alcohol)
+                twin_mgr.patient_history.notes = str(base_notes)
+                twin_mgr.patient_history.baseline_bp = (float(opt_sbp), float(opt_dbp))
+                st.session_state.baseline_setup_complete = True
+                st.success("Digital twin calibrated with customized baseline parameters!")
+                st.rerun()
+        with btn_col2:
+            if st.button("⏩ Skip to Default Baseline", type="secondary", use_container_width=True):
+                st.session_state.baseline_setup_complete = True
+                st.info("Using default baseline (Sarah Jenkins, 42, normotensive 120/80 mmHg).")
+                st.rerun()
+    st.markdown("---")
+
+
+# Small control row: Speed slider, Patient profile switcher, and Minor secondary "Add reading" action
 with st.expander("⚙️ Stream Controls & Profile Settings", expanded=False):
     ctrl_col1, ctrl_col2, ctrl_col3 = st.columns([1.2, 1.4, 1.4])
     with ctrl_col1:
@@ -272,12 +343,18 @@ with st.expander("⚙️ Stream Controls & Profile Settings", expanded=False):
             st.rerun()
 
     with ctrl_col3:
-        st.write("<b>Quick Profile Info:</b>", unsafe_allow_html=True)
+        st.write("<b>Profile Summary:</b>", unsafe_allow_html=True)
         st.caption(
             f"Age: {twin_mgr.patient_history.age} | BMI: {twin_mgr.patient_history.bmi} | "
             f"Smoker: {'Yes' if twin_mgr.patient_history.smoker else 'No'} | "
-            f"Alcohol: {'Yes' if twin_mgr.patient_history.alcohol else 'No'}"
+            f"Alcohol: {'Yes' if twin_mgr.patient_history.alcohol else 'No'} | "
+            f"Baseline BP: {twin_mgr.patient_history.baseline_bp[0]:.0f}/{twin_mgr.patient_history.baseline_bp[1]:.0f} mmHg"
         )
+        if st.session_state.get("baseline_setup_complete", False):
+            if st.button("🔄 Redo Baseline Setup", help="Re-open the baseline setup form"):
+                st.session_state.baseline_setup_complete = False
+                st.rerun()
+
 
     # Manual Reading Input
     st.markdown("---")
@@ -321,15 +398,15 @@ with tabs[0]:
     ukf_res = latest_step.ukf_result
     exp_res = latest_step.explanation_report
 
-    # Current readings
+    # Current readings (updating dynamically every second from synthetic stream)
     cur_obs = latest_step.observed
     cur_sbp = cur_obs[1] if cur_obs is not None else ukf_res.predicted_obs[1]
     cur_dbp = cur_obs[2] if cur_obs is not None else ukf_res.predicted_obs[2]
     cur_hr = cur_obs[0] if cur_obs is not None else ukf_res.predicted_obs[0]
     cur_sv = float(ukf_res.state_mean[2])
 
-    # Top Vitals Cards Row
-    v_col1, v_col2, v_col3, v_col4, v_col5 = st.columns([1, 1, 1, 1, 1.4])
+    # Top Vitals Cards Row (Never fixed: varies continuously over time)
+    v_col1, v_col2, v_col3, v_col4 = st.columns(4)
 
     with v_col1:
         st.markdown(
@@ -337,7 +414,7 @@ with tabs[0]:
             <div class="vital-card">
                 <div class="vital-title">Systolic BP</div>
                 <div class="vital-value">{cur_sbp:.0f}</div>
-                <div class="vital-unit">mmHg</div>
+                <div class="vital-unit">mmHg · Real-time</div>
                 <div class="vital-sub">Twin Est: {ukf_res.predicted_obs[1]:.0f} mmHg</div>
             </div>
             """,
@@ -350,7 +427,7 @@ with tabs[0]:
             <div class="vital-card">
                 <div class="vital-title">Diastolic BP</div>
                 <div class="vital-value">{cur_dbp:.0f}</div>
-                <div class="vital-unit">mmHg</div>
+                <div class="vital-unit">mmHg · Real-time</div>
                 <div class="vital-sub">Twin Est: {ukf_res.predicted_obs[2]:.0f} mmHg</div>
             </div>
             """,
@@ -363,7 +440,7 @@ with tabs[0]:
             <div class="vital-card">
                 <div class="vital-title">Heart Rate</div>
                 <div class="vital-value">{cur_hr:.0f}</div>
-                <div class="vital-unit">beats / min</div>
+                <div class="vital-unit">beats / min · Pulse</div>
                 <div class="vital-sub">Twin Est: {ukf_res.predicted_obs[0]:.0f} bpm</div>
             </div>
             """,
@@ -375,45 +452,71 @@ with tabs[0]:
             f"""
             <div class="vital-card">
                 <div class="vital-title">Stroke Volume</div>
-                <div class="vital-value">{cur_sv:.0f}</div>
-                <div class="vital-unit">mL / beat</div>
-                <div class="vital-sub">CO: {(cur_sv * cur_hr / 1000):.1f} L/min</div>
+                <div class="vital-value">{cur_sv:.1f}</div>
+                <div class="vital-unit">mL / beat · Inotropy</div>
+                <div class="vital-sub">Cardiac Output: {(cur_sv * cur_hr / 1000):.2f} L/min</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    with v_col5:
-        # Divergence Score & Status Badge
-        badge_class = "badge-normal"
-        if div_res.status == "Significant":
-            badge_class = "badge-significant"
-        elif div_res.status == "Watch":
-            badge_class = "badge-watch"
-
-        st.markdown(
-            f"""
-            <div class="vital-card" style="border-left: 4px solid #e11d48;">
-                <div class="vital-title">Divergence Score</div>
-                <div style="display: flex; align-items: baseline; justify-content: center; gap: 8px;">
-                    <span style="font-size: 2.1rem; font-weight: 800; color: #1e293b;">{div_res.divergence_score:.2f}</span>
-                    <span class="{badge_class}">{div_res.status}</span>
-                </div>
-                <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">
-                    Mahalanobis Distance D<sub>M</sub> (χ² threshold: 3.14)
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+    # Minor secondary action: Add reading button
+    with st.expander("＋ Add reading (Manual Entry - Secondary Action)", expanded=False):
+        st.caption("Manually enter an external cuff blood pressure or heart rate reading to assimilate into the digital twin.")
+        m_c1, m_c2, m_c3, m_c4 = st.columns([1, 1, 1, 1.2])
+        with m_c1:
+            man_sbp = st.number_input("Systolic BP (mmHg)", min_value=70.0, max_value=240.0, value=float(cur_sbp), step=1.0, key="man_sbp_input")
+        with m_c2:
+            man_dbp = st.number_input("Diastolic BP (mmHg)", min_value=40.0, max_value=150.0, value=float(cur_dbp), step=1.0, key="man_dbp_input")
+        with m_c3:
+            man_hr = st.number_input("Heart Rate (bpm)", min_value=35.0, max_value=210.0, value=float(cur_hr), step=1.0, key="man_hr_input")
+        with m_c4:
+            st.write("")
+            st.write("")
+            if st.button("📥 Submit Reading", key="submit_man_reading_btn"):
+                twin_mgr.step_forward(manual_obs=np.array([man_hr, man_sbp, man_dbp]))
+                st.success("Manual measurement assimilated!")
+                st.rerun()
 
     st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
-    # Live Interactive Chart: Observed vs Predicted with 50-Twin Uncertainty Bands
+    # -------------------------------------------------------------------------
+    # DIVERGENCE PANEL (Core Innovation)
+    # -------------------------------------------------------------------------
+    badge_class = "badge-normal"
+    if div_res.status == "Significant":
+        badge_class = "badge-significant"
+    elif div_res.status == "Watch":
+        badge_class = "badge-watch"
+
+    st.markdown(
+        f"""
+        <div style="background-color: #ffffff; border: 1.5px solid #fecdd3; border-radius: 16px; padding: 20px 24px; box-shadow: 0 4px 14px rgba(225, 29, 72, 0.05); margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <h3 style="margin: 0; color: #1e293b; font-size: 1.25rem; font-weight: 700;">
+                        🎯 Divergence Panel
+                    </h3>
+                    <div style="font-size: 0.85rem; color: #64748b;">
+                        Live comparison of observed telemetry vs twin-predicted hemodynamics (Mahalanobis Innovation Distance)
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 0.85rem; color: #64748b;">Clinical Status:</span>
+                    <span class="{badge_class}" style="font-size: 0.95rem; padding: 6px 16px;">
+                        {div_res.status}
+                    </span>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     chart_col, gauge_col = st.columns([3.2, 1.2])
 
     with chart_col:
-        st.markdown("<b>Real-Time Hemodynamic Telemetry vs Twin Predictions</b>", unsafe_allow_html=True)
+        st.markdown("<b>Live Hemodynamic Trends: Observed vs Twin-Predicted with Uncertainty Bands</b>", unsafe_allow_html=True)
 
         if not df_hist.empty:
             fig_trends = make_subplots(
@@ -421,7 +524,7 @@ with tabs[0]:
                 cols=1,
                 shared_xaxes=True,
                 vertical_spacing=0.08,
-                subplot_titles=("Blood Pressure (Observed vs Twin Uncertainty Band)", "Heart Rate (bpm)"),
+                subplot_titles=("Blood Pressure: Observed Points vs 90% Twin Predictive Band", "Heart Rate (bpm)"),
                 row_heights=[0.62, 0.38],
             )
 
@@ -514,14 +617,14 @@ with tabs[0]:
             st.plotly_chart(fig_trends, use_container_width=True)
 
     with gauge_col:
-        st.markdown("<b>Divergence Gauge</b>", unsafe_allow_html=True)
+        st.markdown("<b>Divergence Score Gauge</b>", unsafe_allow_html=True)
         gauge_val = min(float(div_res.divergence_score), 6.0)
 
         fig_gauge = go.Figure(
             go.Indicator(
                 mode="gauge+number",
                 value=gauge_val,
-                title={"text": "D<sub>M</sub> Distance", "font": {"size": 14}},
+                title={"text": "Mahalanobis D<sub>M</sub>", "font": {"size": 14}},
                 gauge={
                     "axis": {"range": [0, 6], "tickwidth": 1, "tickcolor": "#94a3b8"},
                     "bar": {"color": "#e11d48"},
@@ -547,15 +650,15 @@ with tabs[0]:
 
         st.caption(
             f"<b>Current Episode:</b> {latest_step.episode}<br>"
-            f"<b>Cross-Detector Agreement:</b> {div_res.detector_agreement}",
+            f"<b>Cross-Detector:</b> {div_res.detector_agreement}",
             unsafe_allow_html=True,
         )
 
-    # One-line Plain-English Explanation banner directly under the chart
+    # One-line Plain-English Explanation of why the twin differs from observed data
     st.markdown(
         f"""
         <div class="explanation-banner">
-            <b>💡 Digital Twin Assessment:</b> {exp_res.summary}
+            <b>💡 Why Twin Differs:</b> {exp_res.summary}
             <span style="float: right; font-size: 0.82rem; color: #64748b;">Confidence: {exp_res.confidence_label}</span>
         </div>
         """,
@@ -572,6 +675,8 @@ with tabs[0]:
                 {"Category": "Hypertension Stage 2", "Systolic (mmHg)": "≥ 140", "Diastolic (mmHg)": "≥ 90", "Status": "Current" if (cur_sbp >= 140 or cur_dbp >= 90) else "-"},
             ]
         )
+        st.dataframe(ref_df, hide_index=True, use_container_width=True)
+
         st.dataframe(ref_df, hide_index=True, use_container_width=True)
 
 
@@ -1174,7 +1279,7 @@ with tabs[6]:
 st.markdown(
     """
     <div class="footer-text">
-        Research and demonstration prototype using synthetic data. Not a clinically validated diagnostic system.
+        Research and demonstration prototype using synthetic data. Not medical advice.
     </div>
     """,
     unsafe_allow_html=True,

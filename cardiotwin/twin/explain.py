@@ -154,7 +154,7 @@ class ExplainabilityEngine:
         else:
             confidence = "Preliminary (Adapting)"
 
-        # Synthesize plain-English explanation
+        # Synthesize plain-English explanation of why twin differs from observed data
         if div_res.status == "Significant":
             # Clinically significant divergence
             top_signal = max(div_res.signal_contributions.items(), key=lambda item: item[1])[0]
@@ -162,44 +162,45 @@ class ExplainabilityEngine:
 
             if primary_param == "Rp":
                 if param_deltas["Rp"]["pct_change"] > 0:
-                    summary = f"Systemic vasoconstriction detected ({primary_desc})."
+                    summary = f"Twin differs from observations: peripheral resistance is up +{param_deltas['Rp']['pct_change']:.1f}% vs baseline ({abs(param_deltas['Rp']['sigma']):.1f}σ), driving acute arterial pressure elevation."
                     detail = (
                         f"The digital twin identifies a significant elevation in peripheral vascular resistance (Rp up {param_deltas['Rp']['pct_change']:.1f}%). "
                         f"This hemodynamic pattern accounts for {sig_pct:.0f}% of observed blood pressure divergence, characteristic of acute sympathetic tone, sodium excess, or renovascular response."
                     )
                 else:
-                    summary = f"Peripheral vasodilation detected ({primary_desc})."
+                    summary = f"Twin differs from observations: peripheral vasodilation (Rp down {abs(param_deltas['Rp']['pct_change']):.1f}%, {abs(param_deltas['Rp']['sigma']):.1f}σ) reducing systemic afterload."
                     detail = (
                         f"Peripheral resistance dropped {abs(param_deltas['Rp']['pct_change']):.1f}%, indicating systemic arteriolar relaxation or vasodilator effect."
                     )
             elif primary_param == "C":
-                summary = f"Arterial stiffening detected ({primary_desc})."
+                summary = f"Twin differs from observations: arterial compliance dropped {abs(param_deltas['C']['pct_change']):.1f}% ({abs(param_deltas['C']['sigma']):.1f}σ), widening pulse pressure."
                 detail = (
                     f"Arterial compliance C dropped by {abs(param_deltas['C']['pct_change']):.1f}%, causing widening of pulse pressure and higher systolic loading."
                 )
             elif primary_param == "HR":
-                summary = f"Pronounced chronotropic shift ({primary_desc})."
+                summary = f"Twin differs from observations: chronotropic surge (HR {param_deltas['HR']['pct_change']:+.1f}%, {abs(param_deltas['HR']['sigma']):.1f}σ) dominating telemetry."
                 detail = (
                     f"Heart rate shifted by {param_deltas['HR']['pct_change']:.1f}%, dominating observed telemetry divergence ({sig_pct:.0f}% contribution from {top_signal})."
                 )
             else:
-                summary = f"Stroke volume shift ({primary_desc})."
+                summary = f"Twin differs from observations: stroke volume shifted {param_deltas['SV']['pct_change']:+.1f}% ({abs(param_deltas['SV']['sigma']):.1f}σ)."
                 detail = (
                     f"Stroke volume varied by {param_deltas['SV']['pct_change']:.1f}%, altering cardiac output drive."
                 )
 
         elif div_res.status == "Watch":
-            summary = f"Mild hemodynamic fluctuation ({primary_desc})."
+            summary = f"Mild hemodynamic departure: {primary_desc} causing minor variance from baseline trajectory."
             detail = (
                 f"Slight physiological drift observed (Divergence score: {div_res.divergence_score:.2f}). "
                 f"Parameters remain within tolerable bounds; continuing close observation."
             )
         else:
-            summary = "Digital twin in close physiological equilibrium."
+            summary = "Digital twin matches observed vitals closely; minor differences reflect normal autonomic regulation and noise."
             detail = (
                 "Observed cardiovascular measurements align closely with the calibrated digital twin. "
                 "Hemodynamic parameters and autoregulation reflect stable homeostatic balance."
             )
+
 
         return ExplanationReport(
             time_step=t_step,

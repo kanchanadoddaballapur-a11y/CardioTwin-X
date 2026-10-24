@@ -165,7 +165,7 @@ Open your browser at `http://localhost:8501`.
 ```bash
 pytest cardiotwin/tests/
 ```
-All 14 unit and integration tests will execute, validating:
+All 16 unit and integration tests will execute, validating:
 1. Physiological model defaults ($120/80$ mmHg $\pm 2$ mmHg).
 2. Baroreflex response to hypertension and hypotension.
 3. UKF parameter convergence on noiseless synthetic data.
@@ -173,15 +173,18 @@ All 14 unit and integration tests will execute, validating:
 5. Divergence score spikes after injected vascular anomalies.
 6. 50-twin Monte Carlo ensemble predictive uncertainty bands.
 7. What-If counterfactual scenario evaluations.
+8. Baseline calibration with skippable default workflows.
+9. Non-prescriptive user reminders and plain-English divergence explanation strings.
 
 ---
 
 ## Assumptions & Scientific Limitations
 
-1. **Synthetic Telemetry:** All patient data, circadian curves, and clinical episodes are synthetically generated. No real patient health information (PHI) is used.
+1. **Synthetic Telemetry:** All patient data, circadian curves, and clinical episodes are synthetically generated for "Sample patient (synthetic data)". No real patient health information (PHI) is used.
 2. **Lumped-Parameter Physiology:** The 3-element Windkessel model is a 0D lumped-parameter simplification. It approximates total systemic impedance, peripheral resistance, and compliance without capturing localized spatial pulse wave velocity (PWV) or complex wave reflections.
 3. **Circular Validation:** Because the synthetic data stream and the digital twin share underlying Windkessel formulations, convergence demonstrates mathematical consistency rather than clinical efficacy.
-4. **Non-Diagnostic:** CardioTwin X is an engineering demonstration prototype. It does not provide medical diagnosis, dosage advice, or treatment instructions.
+4. **Non-Diagnostic Prototype:** Research and demonstration prototype using synthetic data. Not medical advice.
+
 
 ---
 
