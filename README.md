@@ -51,8 +51,8 @@ CardioTwin X introduces a **Mahalanobis Innovation Divergence Engine** to detect
 |---|---|---|---|
 | **Kanchana A** | Lead Author & System Architect | [kanchanadoddaballapur@gmail.com](mailto:kanchanadoddaballapur@gmail.com) | [@kanchanadoddaballapur-a11y](https://github.com/kanchanadoddaballapur-a11y) |
 | **Sinchana** | ML & Digital Twin Developer | [sinchanaralankar@gmail.com](mailto:sinchanaralankar@gmail.com) | [@sinchanaralankar-droid](https://github.com/sinchanaralankar-droid)  |
-| **Bhanushree M** | Research & Development Contributor | [gbm3914@gmail.com] (mailto:gbm3914@gmail.com)| (https://github.com/gbmgam) |
-| **Bhuvana H R** | Research & Development Contributor | [bhugowsharam@gmail.com] (mailto:bhugowsharam@gmail.com) |(https://github.com/bhuvana252007) |
+| **Bhanushree M** | Research & Development Contributor | gbm3914@gmail.com| @gbmgam |
+| **Bhuvana H R** | Research & Development Contributor | bhugowsharam@gmail.com  |@bhuvana252007 |
 ---
 
 ## 3. College / Incubator Information
