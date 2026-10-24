@@ -51,8 +51,8 @@ CardioTwin X introduces a **Mahalanobis Innovation Divergence Engine** to detect
 |---|---|---|---|
 | **Kanchana A** | Lead Author & System Architect | [kanchanadoddaballapur@gmail.com](mailto:kanchanadoddaballapur@gmail.com) | [@kanchanadoddaballapur-a11y](https://github.com/kanchanadoddaballapur-a11y) |
 | **Sinchana** | ML & Digital Twin Developer | [sinchanaralankar@gmail.com](mailto:sinchanaralankar@gmail.com) | [@sinchanaralankar-droid](https://github.com/sinchanaralankar-droid) (USN: 1TE25CS281) |
-| **Bhanushree M** | Research & Development Contributor | Contact via Team | BMS Institute of Technology and Management |
-| **Bhuvana H R** | Research & Development Contributor | Contact via Team | BMS Institute of Technology and Management |
+| **Bhanushree M** | Research & Development Contributor | Contact via Team | [@gbmgam](https://github.com/gbmgam) |
+| **Bhuvana H R** | Research & Development Contributor | Contact via Team | [@bhuvana252007](https://github.com/bhuvana252007) |
 
 ---
 
@@ -396,5 +396,5 @@ CardioTwin X was evaluated across a synthetic cohort of **30 held-out patient ph
 For inquiries, academic collaboration, or questions regarding CardioTwin X:
 - **Lead Developer:** Kanchana A ([kanchanadoddaballapur@gmail.com](mailto:kanchanadoddaballapur@gmail.com))
 - **Co-Developer:** Sinchana ([sinchanaralankar@gmail.com](mailto:sinchanaralankar@gmail.com))
-- **Team Members:** Bhanushree M, Bhuvana H R
+- **Team Members:** Bhanushree M ([@gbmgam](https://github.com/gbmgam)), Bhuvana H R ([@bhuvana252007](https://github.com/bhuvana252007))
 - **Department:** Department of Computer Science & Engineering, BMS Institute of Technology and Management, Bengaluru, India
