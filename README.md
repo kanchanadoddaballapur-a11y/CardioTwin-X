@@ -254,7 +254,7 @@ A comprehensive 9-slide technical presentation deck covering the project backgro
 
 ### Download Public Presentation Deliverables:
 - 📄 **Presentation / Concept Document (PDF - Google Drive):https://drive.google.com/file/d/1W_PExCcxUKbmh4vjuUGD52FFjsK7Kwqp/view?usp=drivesdk
-- 📊 **Presentation in PowerPoint (PPTX) Format:** [CardioTwin_Project_Presentation.pptx](docs/presentation/CardioTwin_Project_Presentation.pptx)
+- 📊 **Presentation in PowerPoint (PPTX) Format:** https://drive.google.com/file/d/1W_PExCcxUKbmh4vjuUGD52FFjsK7Kwqp/view?usp=drivesdk
 
 ### Slide Summary:
 1. **Title Slide:** CardioTwin X: Adaptive Simulation-Driven Cardiovascular Digital Twin
