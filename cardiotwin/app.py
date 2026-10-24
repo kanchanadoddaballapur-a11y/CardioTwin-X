@@ -33,15 +33,6 @@ for p in [current_dir, parent_dir]:
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from cardiotwin.twin.auth import (
-    DEMO_USERS,
-    UserAccount,
-    get_cardiotwin_logo_svg,
-    initialize_auth_state,
-    render_auth_header_profile,
-    render_login_and_logo_page,
-    render_logo_page_content,
-)
 from cardiotwin.twin.data import PATIENT_PRESETS, PatientHistory
 from cardiotwin.twin.divergence import DivergenceResult
 from cardiotwin.twin.estimator import EstimatorStepResult
@@ -198,29 +189,12 @@ st.markdown(
 
 
 # -----------------------------------------------------------------------------
-# Session & Authentication Initialization
+# Session Initialization
 # -----------------------------------------------------------------------------
 is_testing = (
     os.environ.get("STREAMLIT_TESTING") == "1"
     or os.environ.get("PYTEST_CURRENT_TEST") is not None
 )
-
-initialize_auth_state()
-
-# -----------------------------------------------------------------------------
-# Authentication Guard: Login Page & Brand Logo Showcase
-# -----------------------------------------------------------------------------
-if not st.session_state.authenticated:
-    render_login_and_logo_page()
-    st.markdown(
-        """
-        <div class="footer-text">
-            Research and demonstration prototype using synthetic data. Not medical advice.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.stop()
 
 if "twin_state" not in st.session_state:
     st.session_state.twin_state = TwinSessionState(preset_key="healthy", seed=42)
@@ -240,9 +214,9 @@ if latest_step is None:
 
 
 # -----------------------------------------------------------------------------
-# Top Header Bar (With Authenticated User Profile & Live Toggle)
+# Top Header Bar
 # -----------------------------------------------------------------------------
-header_col1, header_col2, header_col3 = st.columns([2.2, 1.6, 2.2])
+header_col1, header_col2, header_col3 = st.columns([2.6, 1.8, 1.6])
 
 with header_col1:
     st.markdown(
@@ -250,10 +224,10 @@ with header_col1:
         <div style="display: flex; align-items: center; gap: 12px;">
             <span style="font-size: 2.2rem;">🫀</span>
             <div>
-                <h2 style="margin: 0; padding: 0; color: #e11d48; font-weight: 800; font-size: 1.55rem;">
+                <h2 style="margin: 0; padding: 0; color: #e11d48; font-weight: 800; font-size: 1.6rem;">
                     CardioTwin X
                 </h2>
-                <div style="font-size: 0.84rem; color: #475569;">
+                <div style="font-size: 0.86rem; color: #475569;">
                     <b>{twin_mgr.patient_history.name}</b>, {twin_mgr.patient_history.age} · 
                     <span style="color: #64748b;">Sample patient (synthetic data)</span>
                 </div>
@@ -275,10 +249,8 @@ with header_col2:
     )
 
 with header_col3:
-    h3_col1, h3_col2 = st.columns([1.5, 0.9])
-    with h3_col1:
-        render_auth_header_profile()
-    with h3_col2:
+    col_t1, col_t2 = st.columns([1.3, 1.0])
+    with col_t1:
         is_live_toggle = st.toggle(
             "Live",
             value=st.session_state.auto_stream,
@@ -287,9 +259,13 @@ with header_col3:
         )
         st.session_state.auto_stream = is_live_toggle
         if is_live_toggle:
-            st.markdown('<span style="color: #059669; font-size: 0.78rem; font-weight: 700;">🟢 Live Mode</span>', unsafe_allow_html=True)
+            st.markdown('<span style="color: #059669; font-size: 0.82rem; font-weight: 700;">🟢 Live Mode</span>', unsafe_allow_html=True)
         else:
-            st.markdown('<span style="color: #64748b; font-size: 0.78rem; font-weight: 700;">⏸️ Paused</span>', unsafe_allow_html=True)
+            st.markdown('<span style="color: #64748b; font-size: 0.82rem; font-weight: 700;">⏸️ Paused</span>', unsafe_allow_html=True)
+    with col_t2:
+        if st.button("▶ Step (+1m)", help="Advance simulation 1 minute manually"):
+            twin_mgr.step_forward()
+            st.rerun()
 
 
 # -----------------------------------------------------------------------------
@@ -573,7 +549,6 @@ tabs = st.tabs([
     "🔍 Explain & Alerts",
     "📊 Validation Dashboard",
     "👥 Care Circle",
-    "🎨 Logo & Brand",
     "ℹ️ About CardioTwin X",
 ])
 
@@ -1599,16 +1574,9 @@ with tabs[6]:
 
 
 # =============================================================================
-# TAB 8: Logo & Brand System
+# TAB 8: About CardioTwin X
 # =============================================================================
 with tabs[7]:
-    render_logo_page_content()
-
-
-# =============================================================================
-# TAB 9: About CardioTwin X
-# =============================================================================
-with tabs[8]:
     st.markdown("### About CardioTwin X")
     st.markdown(
         """
