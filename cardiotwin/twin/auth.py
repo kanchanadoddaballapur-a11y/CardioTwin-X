@@ -68,135 +68,109 @@ DEMO_USERS: Dict[str, UserAccount] = {
 
 
 def get_cardiotwin_logo_svg(width: int = 340, height: int = 140, animated: bool = True) -> str:
-    """Generate medical-grade vector SVG logo for CardioTwin X.
-
-    Features:
-    - Stylized anatomical cardiac silhouette with aortic arch and pulmonary trunk.
-    - Embedded electronic digital twin nodes & circuit pathways.
-    - Synchronized ECG QRS-complex vector line traversing the heart.
-    - Polished rose/crimson gradient typography with dual-subtitles.
-    """
+    """Generate medical-grade vector SVG logo for CardioTwin X."""
     pulse_anim = """
-      @keyframes pulseGlow {
-        0%, 100% { transform: scale(1.0); filter: drop-shadow(0 0 4px rgba(225, 29, 72, 0.4)); }
-        25% { transform: scale(1.03); filter: drop-shadow(0 0 14px rgba(225, 29, 72, 0.8)); }
-        35% { transform: scale(0.98); }
-        45% { transform: scale(1.02); filter: drop-shadow(0 0 10px rgba(225, 29, 72, 0.6)); }
-        60% { transform: scale(1.0); }
-      }
-      @keyframes ecgDash {
-        to { stroke-dashoffset: -100; }
-      }
-      .heart-anim {
-        transform-origin: 55px 65px;
-        animation: pulseGlow 1.2s infinite ease-in-out;
-      }
-      .ecg-anim {
-        stroke-dasharray: 8, 4;
-        animation: ecgDash 2s linear infinite;
-      }
-    """ if animated else ""
+@keyframes pulseGlow {
+  0%, 100% { transform: scale(1.0); filter: drop-shadow(0 0 4px rgba(225, 29, 72, 0.4)); }
+  25% { transform: scale(1.03); filter: drop-shadow(0 0 14px rgba(225, 29, 72, 0.8)); }
+  35% { transform: scale(0.98); }
+  45% { transform: scale(1.02); filter: drop-shadow(0 0 10px rgba(225, 29, 72, 0.6)); }
+  60% { transform: scale(1.0); }
+}
+@keyframes ecgDash {
+  to { stroke-dashoffset: -100; }
+}
+.heart-anim {
+  transform-origin: 55px 65px;
+  animation: pulseGlow 1.2s infinite ease-in-out;
+}
+.ecg-anim {
+  stroke-dasharray: 8, 4;
+  animation: ecgDash 2s linear infinite;
+}
+""" if animated else ""
 
-    svg = f"""
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" height="{height}">
-      <defs>
-        <style>
-          {pulse_anim}
-          .brand-text {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: 800; }}
-          .sub-text {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: 600; }}
-        </style>
-        <linearGradient id="roseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#f43f5e" />
-          <stop offset="50%" stop-color="#e11d48" />
-          <stop offset="100%" stop-color="#9f1239" />
-        </linearGradient>
-        <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#38bdf8" />
-          <stop offset="100%" stop-color="#1d4ed8" />
-        </linearGradient>
-        <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#e11d48" />
-          <stop offset="85%" stop-color="#881337" />
-          <stop offset="100%" stop-color="#0284c7" />
-        </linearGradient>
-        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#e11d48" flood-opacity="0.25"/>
-        </filter>
-      </defs>
-
-      <!-- Central Cardiac Digital Twin Icon -->
-      <g class="heart-anim" filter="url(#shadow)">
-        <!-- Ventricular Base Heart Silhouette -->
-        <path d="M 55 98 C 25 80, 16 52, 28 36 C 38 22, 50 28, 55 36 C 60 28, 72 22, 82 36 C 94 52, 85 80, 55 98 Z" 
-              fill="url(#roseGradient)" />
-
-        <!-- Aortic Arch Sweeping Over Top -->
-        <path d="M 50 32 C 48 16, 68 12, 74 24" 
-              fill="none" stroke="url(#roseGradient)" stroke-width="7" stroke-linecap="round" />
-        <!-- 3 Branch Arteries from Aorta -->
-        <line x1="57" y1="18" x2="56" y2="10" stroke="#be123c" stroke-width="3" stroke-linecap="round" />
-        <line x1="64" y1="17" x2="65" y2="9" stroke="#be123c" stroke-width="2.5" stroke-linecap="round" />
-        <line x1="71" y1="20" x2="74" y2="11" stroke="#be123c" stroke-width="2.5" stroke-linecap="round" />
-
-        <!-- Pulmonary Trunk (Cobalt Blue Cross-Over) -->
-        <path d="M 40 40 C 44 26, 32 20, 26 25" 
-              fill="none" stroke="url(#blueGradient)" stroke-width="6" stroke-linecap="round" />
-        <!-- Superior Vena Cava -->
-        <line x1="28" y1="36" x2="26" y2="14" stroke="#1d4ed8" stroke-width="4.5" stroke-linecap="round" />
-
-        <!-- Digital Twin Circuit Overlay Lines & Nodes -->
-        <path d="M 32 50 L 44 58 L 52 48 L 64 62 L 76 52" 
-              fill="none" stroke="#ffffff" stroke-width="1.8" opacity="0.85" stroke-linecap="round" />
-        <circle cx="32" cy="50" r="2.5" fill="#38bdf8" />
-        <circle cx="44" cy="58" r="2.2" fill="#ffffff" />
-        <circle cx="52" cy="48" r="2.8" fill="#facc15" />
-        <circle cx="64" cy="62" r="2.2" fill="#ffffff" />
-        <circle cx="76" cy="52" r="2.5" fill="#38bdf8" />
-
-        <!-- Dynamic ECG Vector Trace -->
-        <path class="ecg-anim" d="M 18 64 L 34 64 L 38 52 L 42 76 L 46 44 L 50 68 L 54 64 L 92 64" 
-              fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.95"/>
-      </g>
-
-      <!-- Brand Typography -->
-      <g transform="translate(108, 0)">
-        <!-- App Title -->
-        <text x="0" y="52" class="brand-text" font-size="34" fill="url(#textGradient)" letter-spacing="-0.5">
-          CardioTwin <tspan fill="#e11d48">X</tspan>
-        </text>
-
-        <!-- Subtitle & Category -->
-        <text x="2" y="72" class="sub-text" font-size="11.5" fill="#475569" letter-spacing="0.8">
-          CARDIOVASCULAR DIGITAL TWIN
-        </text>
-
-        <!-- Physiological Tagline -->
-        <text x="2" y="90" font-family="-apple-system, sans-serif" font-size="10" fill="#94a3b8" letter-spacing="0.2">
-          Adaptive · Simulation-Driven · Explainable
-        </text>
-
-        <!-- Medical Badge -->
-        <rect x="2" y="102" width="138" height="20" rx="10" fill="#fff1f2" stroke="#fecdd3" stroke-width="1"/>
-        <text x="71" y="116" font-family="-apple-system, sans-serif" font-size="9" font-weight="700" fill="#be123c" text-anchor="middle">
-          In-Silico Hemodynamics
-        </text>
-      </g>
-    </svg>
-    """
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" width="{width}" height="{height}">
+<defs>
+<style>
+{pulse_anim}
+.brand-text {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: 800; }}
+.sub-text {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-weight: 600; }}
+</style>
+<linearGradient id="roseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#f43f5e" />
+<stop offset="50%" stop-color="#e11d48" />
+<stop offset="100%" stop-color="#9f1239" />
+</linearGradient>
+<linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#38bdf8" />
+<stop offset="100%" stop-color="#1d4ed8" />
+</linearGradient>
+<linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+<stop offset="0%" stop-color="#e11d48" />
+<stop offset="85%" stop-color="#881337" />
+<stop offset="100%" stop-color="#0284c7" />
+</linearGradient>
+<filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+<feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#e11d48" flood-opacity="0.25"/>
+</filter>
+</defs>
+<g class="heart-anim" filter="url(#shadow)">
+<path d="M 55 98 C 25 80, 16 52, 28 36 C 38 22, 50 28, 55 36 C 60 28, 72 22, 82 36 C 94 52, 85 80, 55 98 Z" fill="url(#roseGradient)" />
+<path d="M 50 32 C 48 16, 68 12, 74 24" fill="none" stroke="url(#roseGradient)" stroke-width="7" stroke-linecap="round" />
+<line x1="57" y1="18" x2="56" y2="10" stroke="#be123c" stroke-width="3" stroke-linecap="round" />
+<line x1="64" y1="17" x2="65" y2="9" stroke="#be123c" stroke-width="2.5" stroke-linecap="round" />
+<line x1="71" y1="20" x2="74" y2="11" stroke="#be123c" stroke-width="2.5" stroke-linecap="round" />
+<path d="M 40 40 C 44 26, 32 20, 26 25" fill="none" stroke="url(#blueGradient)" stroke-width="6" stroke-linecap="round" />
+<line x1="28" y1="36" x2="26" y2="14" stroke="#1d4ed8" stroke-width="4.5" stroke-linecap="round" />
+<path d="M 32 50 L 44 58 L 52 48 L 64 62 L 76 52" fill="none" stroke="#ffffff" stroke-width="1.8" opacity="0.85" stroke-linecap="round" />
+<circle cx="32" cy="50" r="2.5" fill="#38bdf8" />
+<circle cx="44" cy="58" r="2.2" fill="#ffffff" />
+<circle cx="52" cy="48" r="2.8" fill="#facc15" />
+<circle cx="64" cy="62" r="2.2" fill="#ffffff" />
+<circle cx="76" cy="52" r="2.5" fill="#38bdf8" />
+<path class="ecg-anim" d="M 18 64 L 34 64 L 38 52 L 42 76 L 46 44 L 50 68 L 54 64 L 92 64" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.95"/>
+</g>
+<g transform="translate(108, 0)">
+<text x="0" y="52" class="brand-text" font-size="34" fill="url(#textGradient)" letter-spacing="-0.5">CardioTwin <tspan fill="#e11d48">X</tspan></text>
+<text x="2" y="72" class="sub-text" font-size="11.5" fill="#475569" letter-spacing="0.8">CARDIOVASCULAR DIGITAL TWIN</text>
+<text x="2" y="90" font-family="-apple-system, sans-serif" font-size="10" fill="#94a3b8" letter-spacing="0.2">Adaptive · Simulation-Driven · Explainable</text>
+<rect x="2" y="102" width="138" height="20" rx="10" fill="#fff1f2" stroke="#fecdd3" stroke-width="1"/>
+<text x="71" y="116" font-family="-apple-system, sans-serif" font-size="9" font-weight="700" fill="#be123c" text-anchor="middle">In-Silico Hemodynamics</text>
+</g>
+</svg>"""
     return svg
+
+
+def render_logo_svg_component(width: int = 340, height: int = 140, animated: bool = True) -> None:
+    """Render the official CardioTwin X SVG logo in an isolated HTML container."""
+    svg = get_cardiotwin_logo_svg(width=width, height=height, animated=animated)
+    html_wrapper = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {{
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }}
+  </style>
+</head>
+<body>
+  {svg}
+</body>
+</html>"""
+    st.components.v1.html(html_wrapper, height=height + 8, scrolling=False)
 
 
 def render_logo_header_card() -> None:
     """Render the official responsive CardioTwin X logo card."""
-    logo_svg = get_cardiotwin_logo_svg(width=340, height=135, animated=True)
-    st.markdown(
-        f"""
-        <div style="display: flex; justify-content: center; align-items: center; padding: 12px 0 20px 0;">
-            {logo_svg}
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    render_logo_svg_component(width=340, height=135, animated=True)
 
 
 def initialize_auth_state() -> None:
@@ -419,12 +393,15 @@ def render_logo_page_content() -> None:
 
     with logo_col1:
         st.markdown(
-            f"""
-            <div class="brand-showcase-box" style="text-align: center; padding: 40px 20px;">
-                <div style="display: flex; justify-content: center; margin-bottom: 16px;">
-                    {get_cardiotwin_logo_svg(width=420, height=170, animated=True)}
-                </div>
-                <div style="font-size: 0.88rem; color: #475569; max-width: 440px; margin: 0 auto; line-height: 1.5;">
+            """
+            <div style="background-color: #ffffff; border: 1.5px solid #fecdd3; border-radius: 20px; padding: 24px 20px 16px 20px; box-shadow: 0 8px 24px rgba(225, 29, 72, 0.06); text-align: center; margin-bottom: 18px;">
+            """,
+            unsafe_allow_html=True,
+        )
+        render_logo_svg_component(width=420, height=170, animated=True)
+        st.markdown(
+            """
+                <div style="font-size: 0.88rem; color: #475569; max-width: 440px; margin: 8px auto 0 auto; line-height: 1.5;">
                     <b>Primary Insignia:</b> Conjoins the anatomical aortic-ventricular morphology with 
                     in-silico circuit nodes and an electrophysiological QRS vector trace.
                 </div>
