@@ -25,7 +25,7 @@ All mandatory submission deliverables specified in the evaluation requirements a
 | 8 | **15-20 Min Unlisted Demo Video** | ✅ Included | [Section 8](#8-demonstration-video-unlisted-youtube) | [Watch Unlisted Demo Video](https://youtu.be/kU8X7m6Lz9w) |
 | 9 | **Open-source License Details** | ✅ Included | [Section 9](#9-open-source-license-details) | [LICENSE](LICENSE) |
 | 10 | **Architecture Diagram (PDF / PPT)** | ✅ Included | [Section 10](#10-architecture-diagram-pdf--ppt-formats) | [Download PDF](docs/architecture/CardioTwin_Architecture_Diagram.pdf) • [Download PPTX](docs/architecture/CardioTwin_Architecture_Diagram.pptx) |
-| 11 | **Presentation (PDF / PPT)** | ✅ Included | [Section 11](#11-presentation-pdf--ppt-formats) | [View PDF (Google Drive)](https://drive.google.com/file/d/1dg_ermdvzWejSIxMOYWh7rDlK0iRY1K-/view?usp=drivesdk) • [Download PPTX](docs/presentation/CardioTwin_Project_Presentation.pptx) |
+| 11 | **Presentation (PDF / PPT)** | ✅ Included | [Section 11](#11-presentation-pdf--ppt-formats) | [View PDF (Google Drive)](https://drive.google.com/file/d/1W_PExCcxUKbmh4vjuUGD52FFjsK7Kwqp/view?usp=drivesdk) • [Download PPTX]([docs/presentation/CardioTwin_Project_Presentation.pptx](https://drive.google.com/file/d/1W_PExCcxUKbmh4vjuUGD52FFjsK7Kwqp/view?usp=drivesdk)) |
 | 12 | **Public Accessibility Verification** | ✅ Verified | [Section 12](#12-public-accessibility-verification) | [Access Statement](#12-public-accessibility-verification) |
 
 ---
