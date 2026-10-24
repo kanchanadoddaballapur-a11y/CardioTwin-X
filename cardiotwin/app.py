@@ -37,6 +37,7 @@ from cardiotwin.twin.data import PATIENT_PRESETS, PatientHistory
 from cardiotwin.twin.divergence import DivergenceResult
 from cardiotwin.twin.estimator import EstimatorStepResult
 from cardiotwin.twin.explain import ExplanationReport
+from cardiotwin.twin.heart3d import generate_3d_heart_html
 from cardiotwin.twin.model import WindkesselParams, simulate_beat
 from cardiotwin.twin.state import TwinSessionState
 from cardiotwin.twin.validation import (
@@ -1038,110 +1039,69 @@ with tabs[1]:
 # TAB 3: 3D Heart
 # =============================================================================
 with tabs[2]:
-    st.markdown("### 3D Hemodynamic Cardiac Geometry & Aortic Arch")
+    st.markdown("### 🫀 3D Anatomical Heart & Hemodynamic Lub-Dub Biomechanics")
     st.caption(
-        "Interactive 3D model of the heart ventricles and ascending aorta. "
-        "Surface colors reflect instantaneous aortic pressure and dynamic divergence state."
+        "Interactive 3D anatomical cardiovascular model featuring realistic ventricular apex, aortic arch with branching vessels, "
+        "pulmonary trunk, superior vena cava, and coronary vasculature network. Physiologically driven in real-time by Blood Pressure (Lub-Dub)."
     )
 
-    h_col1, h_col2 = st.columns([2.6, 1.4])
+    # Generate and render anatomical Three.js WebGL heart
+    heart_html = generate_3d_heart_html(
+        sbp=cur_sbp,
+        dbp=cur_dbp,
+        hr=cur_hr,
+        sv=cur_sv,
+        div_status=div_res.status,
+        div_score=float(div_res.divergence_score),
+    )
+    st.components.v1.html(heart_html, height=640, scrolling=False)
 
-    with h_col1:
-        # Dynamic geometry pulsation based on current HR and SV
-        pulse_scale = 1.0 + (cur_sv - 60.0) * 0.003
-        pulse_rate_factor = min(cur_hr / 70.0, 1.8)
+    # Detailed anatomical and biomechanical explanation guide
+    guide_col1, guide_col2 = st.columns([1.5, 1.5])
 
-        # Ventricles surface (modified cardioid ellipsoid)
-        u = np.linspace(0, 2 * np.pi, 30)
-        v = np.linspace(-np.pi / 2, np.pi / 2, 22)
-        u, v = np.meshgrid(u, v)
-
-        xv = pulse_scale * (1.05 * np.cos(v) * np.sin(u) * (1.0 + 0.25 * np.cos(u)))
-        yv = pulse_scale * (1.45 * np.sin(v))
-        zv = pulse_scale * (0.95 * np.cos(v) * np.cos(u))
-
-        # Aorta Arch (tubular curved manifold attached superiorly)
-        theta = np.linspace(0, np.pi * 0.78, 22)
-        phi = np.linspace(0, 2 * np.pi, 18)
-        theta, phi = np.meshgrid(theta, phi)
-        r_aorta = 0.22
-        R_arch = 0.82
-        xa = (R_arch + r_aorta * np.cos(phi)) * np.cos(theta) - 0.40
-        ya = 1.15 + (R_arch + r_aorta * np.cos(phi)) * np.sin(theta)
-        za = r_aorta * np.sin(phi)
-
-        # Determine color palette based on pressure and clinical divergence status
-        if div_res.status == "Significant":
-            # Amber / High warning tones
-            ventricle_colorscale = "YlOrRd"
-            aorta_colorscale = "Reds"
-        elif div_res.status == "Watch":
-            ventricle_colorscale = "Burg"
-            aorta_colorscale = "Reds"
-        else:
-            # Healthy rose / crimson tones
-            ventricle_colorscale = "Reds"
-            aorta_colorscale = "PuRd"
-
-        # Ventricle pressure coloring mapped to SBP/DBP
-        p_surf_v = cur_dbp + (cur_sbp - cur_dbp) * (yv - np.min(yv)) / (np.max(yv) - np.min(yv) + 1e-5)
-        p_surf_a = cur_sbp + (xa - np.min(xa)) * 5.0
-
-        fig_3d = go.Figure()
-        fig_3d.add_trace(
-            go.Surface(
-                x=xv, y=yv, z=zv,
-                surfacecolor=p_surf_v,
-                colorscale=ventricle_colorscale,
-                showscale=True,
-                colorbar=dict(title="Pressure (mmHg)", len=0.75, x=0.9),
-                opacity=0.92,
-                name="Ventricles",
-            )
-        )
-        fig_3d.add_trace(
-            go.Surface(
-                x=xa, y=ya, z=za,
-                surfacecolor=p_surf_a,
-                colorscale=aorta_colorscale,
-                showscale=False,
-                opacity=0.88,
-                name="Aortic Arch",
-            )
-        )
-
-        fig_3d.update_layout(
-            height=460,
-            margin=dict(l=10, r=10, t=10, b=10),
-            scene=dict(
-                xaxis=dict(visible=False),
-                yaxis=dict(visible=False),
-                zaxis=dict(visible=False),
-                camera=dict(eye=dict(x=1.5, y=-1.6, z=1.2)),
-                bgcolor="#ffffff",
-            ),
-            paper_bgcolor="#ffffff",
-        )
-        st.plotly_chart(fig_3d, use_container_width=True)
-
-    with h_col2:
-        st.markdown("<b>Hemodynamic Visualization Legend</b>", unsafe_allow_html=True)
+    with guide_col1:
         st.markdown(
             f"""
-            <div style="background-color: #fff1f2; border-radius: 12px; padding: 16px; border: 1px solid #fecdd3;">
-                <p><b>Surface Mapping:</b></p>
-                <ul style="padding-left: 20px; font-size: 0.9rem;">
-                    <li><b>Lower Body:</b> Left & Right Ventricular myocardium.</li>
-                    <li><b>Upper Arch:</b> Ascending aorta & aortic arch.</li>
-                    <li><b>Color Gradient:</b> Calibrated directly to continuous pressure ({cur_dbp:.0f} → {cur_sbp:.0f} mmHg).</li>
-                    <li><b>Warning Shift:</b> Color tones transition to high alert when divergence exceeds threshold.</li>
+            <div style="background-color: #ffffff; border: 1px solid #fecdd3; border-radius: 14px; padding: 18px; box-shadow: 0 2px 10px rgba(225, 29, 72, 0.04); margin-top: 10px;">
+                <h4 style="margin: 0 0 10px 0; color: #e11d48; font-size: 1.05rem;">
+                    🫀 Anatomical Architecture (Visualized)
+                </h4>
+                <ul style="padding-left: 18px; font-size: 0.88rem; line-height: 1.6; color: #334155;">
+                    <li><b>Conical Ventricles:</b> Muscular left and right ventricles tapering inferolaterally to the anatomical cardiac apex.</li>
+                    <li><b>Aortic Arch (Red):</b> Sweeping ascending aorta with the <b>3 brachiocephalic, carotid, and subclavian branch arteries</b> emerging superiorly.</li>
+                    <li><b>Pulmonary Trunk & Arteries (Blue):</b> Prominent cobalt blue vessel emerging anterior to aorta and dividing into left and right pulmonary branches.</li>
+                    <li><b>Superior Vena Cava:</b> Vertical deoxygenated inflow vessel entering the right atrium.</li>
+                    <li><b>Coronary Vasculature Network:</b> Branching anterior interventricular veins (blue) and arteries (red) traversing the sulcus with fine myocardial arborizations.</li>
+                    <li><b>Right & Left Auricles:</b> Lobulated muscular pouches flanking the great vessels.</li>
                 </ul>
-                <hr style="border: 0; border-top: 1px solid #fecdd3; margin: 12px 0;">
-                <p><b>Cardiac Mechanics:</b></p>
-                <div style="font-size: 0.86rem; color: #475569;">
-                    <b>Stroke Volume:</b> {cur_sv:.1f} mL<br>
-                    <b>Pulsation Frequency:</b> {cur_hr:.0f} bpm<br>
-                    <b>Vascular Load Status:</b> {'High Afterload' if p_est[0] > 1.4 else 'Balanced'}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with guide_col2:
+        st.markdown(
+            f"""
+            <div style="background-color: #ffffff; border: 1px solid #fecdd3; border-radius: 14px; padding: 18px; box-shadow: 0 2px 10px rgba(225, 29, 72, 0.04); margin-top: 10px;">
+                <h4 style="margin: 0 0 10px 0; color: #e11d48; font-size: 1.05rem;">
+                    💓 "Lub-Dub" Biomechanical BP Coupling
+                </h4>
+                <div style="font-size: 0.88rem; line-height: 1.6; color: #334155;">
+                    <p style="margin-bottom: 6px;">
+                        <b>1. "LUB" (S1 - Ventricular Systole):</b> Mitral/tricuspid valve closure snaps at onset of systole. 
+                        Ventricles undergo forceful radial contraction and apical wringing twist. Contraction force is scaled directly by 
+                        <b>Pulse Pressure (ΔP = {cur_sbp - cur_dbp:.0f} mmHg)</b> and Stroke Volume ({cur_sv:.1f} mL). 
+                        Concurrently, the aortic arch dilates under systolic surge (<b>{cur_sbp:.0f} mmHg</b>).
+                    </p>
+                    <p style="margin-bottom: 6px;">
+                        <b>2. "DUB" (S2 - Aortic Valve Closure):</b> Aortic semilunar valves snap shut at end-ejection, causing 
+                        the characteristic dicrotic notch recoil vibration on the aortic arch.
+                    </p>
+                    <p style="margin-bottom: 0;">
+                        <b>3. Diastolic Filling & Audio:</b> Ventricles relax smoothly to baseline end-diastolic volume at <b>{cur_dbp:.0f} mmHg</b>. 
+                        Tempo is paced to exact heart rate (<b>{cur_hr:.0f} bpm</b>, T = {60.0 / max(cur_hr, 1.0):.2f}s). 
+                        Click <b>Sound: ON</b> in the 3D viewer to hear the synthesized acoustic phonocardiogram.
+                    </p>
                 </div>
             </div>
             """,

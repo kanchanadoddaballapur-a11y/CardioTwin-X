@@ -88,3 +88,31 @@ def test_explanation_states_why_twin_differs():
     summary = res.explanation_report.summary
     assert "Twin differs from observations" in summary or "vasoconstriction" in summary.lower() or "resistance" in summary.lower()
 
+
+def test_3d_heart_anatomical_and_lubdub_generation():
+    """3D anatomical heart HTML generator must incorporate BP-driven lub-dub and vascular anatomy."""
+    from cardiotwin.twin.heart3d import generate_3d_heart_html
+
+    html = generate_3d_heart_html(
+        sbp=145.0,
+        dbp=92.0,
+        hr=84.0,
+        sv=68.0,
+        div_status="Significant",
+        div_score=3.8,
+    )
+    assert len(html) > 10000
+    assert "three.min.js" in html
+    assert "OrbitControls" in html
+    assert "ventriclesGeom" in html
+    assert "archCurve" in html  # Aortic arch
+    assert "ptCurve" in html    # Pulmonary trunk
+    assert "coronaryGroup" in html
+    assert "playLubSound" in html
+    assert "playDubSound" in html
+    assert "phase-lub" in html
+    assert "phase-dub" in html
+    assert "145" in html  # SBP passed in config
+    assert "92" in html   # DBP passed in config
+
+
