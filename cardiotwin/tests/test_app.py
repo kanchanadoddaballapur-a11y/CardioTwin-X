@@ -116,3 +116,31 @@ def test_3d_heart_anatomical_and_lubdub_generation():
     assert "92" in html   # DBP passed in config
 
 
+def test_cardiotwin_logo_svg_generation():
+    """CardioTwin X SVG logo must generate valid vector markup with anatomical branding."""
+    from cardiotwin.twin.auth import get_cardiotwin_logo_svg
+
+    svg = get_cardiotwin_logo_svg(width=340, height=140, animated=True)
+    assert "<svg" in svg and "</svg>" in svg
+    assert "CardioTwin" in svg
+    assert "roseGradient" in svg
+    assert "blueGradient" in svg
+    assert "heart-anim" in svg
+    assert "ecg-anim" in svg
+
+
+def test_demo_user_accounts():
+    """All standard clinical and research demo accounts must be configured."""
+    from cardiotwin.twin.auth import DEMO_USERS
+
+    expected_roles = ["cardiologist", "researcher", "patient", "guest"]
+    for role_key in expected_roles:
+        assert role_key in DEMO_USERS
+        user = DEMO_USERS[role_key]
+        assert "@" in user.email
+        assert user.name is not None
+        assert user.role is not None
+        assert user.avatar is not None
+
+
+
