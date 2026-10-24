@@ -39,12 +39,18 @@ from cardiotwin.twin.estimator import EstimatorStepResult
 from cardiotwin.twin.explain import ExplanationReport
 from cardiotwin.twin.model import WindkesselParams, simulate_beat
 from cardiotwin.twin.state import TwinSessionState
+from cardiotwin.twin.validation import (
+    VALIDATION_NOTE,
+    check_public_dataset,
+    run_cohort_validation,
+)
 from cardiotwin.twin.whatif import (
     MEDICAL_DISCLAIMER,
     WHATIF_SCENARIOS,
     ScenarioDelta,
     run_whatif_simulation,
 )
+
 
 # -----------------------------------------------------------------------------
 # Streamlit Page Configuration & Rose Healthcare Theme Styling
@@ -376,6 +382,162 @@ with st.expander("⚙️ Stream Controls & Profile Settings", expanded=False):
 
 
 # -----------------------------------------------------------------------------
+# Cached Validation & Timeline Helpers
+# -----------------------------------------------------------------------------
+@st.cache_data(show_spinner="Running 30-patient cohort validation benchmark...")
+def get_cached_validation_summary():
+    """Execute and cache empirical validation across 30 held-out synthetic patients."""
+    return run_cohort_validation(patients_per_preset=10, steps_per_patient=40, seed_base=7000)
+
+
+def build_patient_timeline_figure(twin_state: TwinSessionState) -> go.Figure:
+    """Build interactive Plotly timeline showing readings, status changes, anomalies, what-if events, and data gaps."""
+    steps = twin_state.steps
+    if not steps:
+        return go.Figure()
+
+    times = [s.timestamp for s in steps]
+    sbp_vals = [s.observed[1] if (s.observed is not None and not np.isnan(s.observed[1])) else None for s in steps]
+    dbp_vals = [s.observed[2] if (s.observed is not None and not np.isnan(s.observed[2])) else None for s in steps]
+    hr_vals = [s.observed[0] if (s.observed is not None and not np.isnan(s.observed[0])) else None for s in steps]
+
+    fig = make_subplots(
+        rows=2,
+        cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.08,
+        subplot_titles=("Hemodynamic Session Trajectory & Clinical Status Changes", "Heart Rate (bpm) & Data Gaps"),
+        row_heights=[0.65, 0.35],
+    )
+
+    status_colors = []
+    hover_texts = []
+    rel_level, _, _ = twin_state.compute_data_reliability()
+
+    for s in steps:
+        st_val = s.divergence_result.status
+        if st_val == "Significant":
+            c = "#e11d48"
+        elif st_val == "Watch":
+            c = "#f59e0b"
+        else:
+            c = "#10b981"
+        status_colors.append(c)
+
+        obs_str = f"{s.observed[1]:.0f}/{s.observed[2]:.0f} mmHg" if s.observed is not None else "Data Gap (NaN)"
+        hr_str = f"{s.observed[0]:.0f} bpm" if s.observed is not None else "N/A"
+        ht = (
+            f"<b>Time:</b> {s.timestamp.strftime('%H:%M:%S')}<br>"
+            f"<b>Observed BP:</b> {obs_str}<br>"
+            f"<b>Heart Rate:</b> {hr_str}<br>"
+            f"<b>Clinical Status:</b> {s.divergence_result.status}<br>"
+            f"<b>Divergence Score:</b> {s.divergence_result.divergence_score:.2f}<br>"
+            f"<b>Reliability:</b> {rel_level}<br>"
+            f"<b>Episode:</b> {s.episode}"
+        )
+        hover_texts.append(ht)
+
+    # SBP and DBP traces
+    fig.add_trace(
+        go.Scatter(
+            x=times, y=sbp_vals,
+            mode="lines+markers",
+            line=dict(color="#f43f5e", width=1.8),
+            marker=dict(color=status_colors, size=6),
+            text=hover_texts,
+            hoverinfo="text",
+            name="Systolic BP (mmHg)",
+        ),
+        row=1, col=1,
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=times, y=dbp_vals,
+            mode="lines+markers",
+            line=dict(color="#3b82f6", width=1.5),
+            marker=dict(color=status_colors, size=5),
+            text=hover_texts,
+            hoverinfo="text",
+            name="Diastolic BP (mmHg)",
+        ),
+        row=1, col=1,
+    )
+
+    # HR trace
+    fig.add_trace(
+        go.Scatter(
+            x=times, y=hr_vals,
+            mode="lines+markers",
+            line=dict(color="#059669", width=1.5),
+            marker=dict(color=status_colors, size=4),
+            text=hover_texts,
+            hoverinfo="text",
+            name="Heart Rate (bpm)",
+        ),
+        row=2, col=1,
+    )
+
+    # Highlight Injected Anomalies (shaded vertical intervals)
+    for s in steps:
+        if s.is_anomaly:
+            fig.add_vrect(
+                x0=s.timestamp - timedelta(seconds=28),
+                x1=s.timestamp + timedelta(seconds=28),
+                fillcolor="rgba(225, 29, 72, 0.08)",
+                line_width=0,
+                row="all",
+            )
+
+    # Highlight Data Gaps (sensor dropouts)
+    for s in steps:
+        if s.observed is None or np.any(np.isnan(s.observed)):
+            fig.add_trace(
+                go.Scatter(
+                    x=[s.timestamp],
+                    y=[120.0],
+                    mode="markers",
+                    marker=dict(symbol="x", size=10, color="#64748b", line=dict(width=2)),
+                    name="Data Gap (Dropout)",
+                    hovertext=f"Data Gap: Telemetry missing at {s.timestamp.strftime('%H:%M:%S')}",
+                    hoverinfo="text",
+                    showlegend=False,
+                ),
+                row=1, col=1,
+            )
+
+    # Highlight What-If Experiments Run
+    for w_ev in twin_state.whatif_events:
+        fig.add_trace(
+            go.Scatter(
+                x=[w_ev["timestamp"]],
+                y=[155.0],
+                mode="markers+text",
+                marker=dict(symbol="diamond", size=11, color="#d97706", line=dict(width=1.5)),
+                text=["🧪 What-If"],
+                textposition="top center",
+                name=f"What-If: {w_ev['scenario']}",
+                hovertext=f"<b>What-If Experiment</b><br><b>Scenario:</b> {w_ev['scenario']}<br><b>Time:</b> {w_ev['timestamp'].strftime('%H:%M:%S')}<br>{w_ev.get('details', '')}",
+                hoverinfo="text",
+                showlegend=False,
+            ),
+            row=1, col=1,
+        )
+
+    fig.update_layout(
+        height=440,
+        margin=dict(l=40, r=20, t=30, b=30),
+        plot_bgcolor="#ffffff",
+        paper_bgcolor="#ffffff",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0),
+    )
+    fig.update_yaxes(gridcolor="#f1f5f9", title_text="Pressure (mmHg)", row=1, col=1)
+    fig.update_yaxes(gridcolor="#f1f5f9", title_text="Rate (bpm)", row=2, col=1)
+    fig.update_xaxes(gridcolor="#f1f5f9")
+    return fig
+
+
+# -----------------------------------------------------------------------------
 # Main Application Tabs
 # -----------------------------------------------------------------------------
 tabs = st.tabs([
@@ -384,9 +546,11 @@ tabs = st.tabs([
     "❤️ 3D Heart",
     "🧪 What-If Lab",
     "🔍 Explain & Alerts",
+    "📊 Validation Dashboard",
     "👥 Care Circle",
     "ℹ️ About CardioTwin X",
 ])
+
 
 
 # =============================================================================
@@ -398,12 +562,38 @@ with tabs[0]:
     ukf_res = latest_step.ukf_result
     exp_res = latest_step.explanation_report
 
+    # Evaluate Data Reliability (High / Medium / Low)
+    rel_level, rel_reason, rel_metrics = twin_mgr.compute_data_reliability()
+
     # Current readings (updating dynamically every second from synthetic stream)
     cur_obs = latest_step.observed
-    cur_sbp = cur_obs[1] if cur_obs is not None else ukf_res.predicted_obs[1]
-    cur_dbp = cur_obs[2] if cur_obs is not None else ukf_res.predicted_obs[2]
-    cur_hr = cur_obs[0] if cur_obs is not None else ukf_res.predicted_obs[0]
+    cur_sbp = cur_obs[1] if (cur_obs is not None and not np.isnan(cur_obs[1])) else ukf_res.predicted_obs[1]
+    cur_dbp = cur_obs[2] if (cur_obs is not None and not np.isnan(cur_obs[2])) else ukf_res.predicted_obs[2]
+    cur_hr = cur_obs[0] if (cur_obs is not None and not np.isnan(cur_obs[0])) else ukf_res.predicted_obs[0]
     cur_sv = float(ukf_res.state_mean[2])
+
+    # Prediction text or uncertainty warning when Low
+    if rel_level == "Low":
+        pred_sbp_sub = '<span style="color: #b91c1c; font-weight: 600; font-size: 0.76rem;">Insufficient or unreliable data. No prediction shown</span>'
+        pred_dbp_sub = '<span style="color: #b91c1c; font-weight: 600; font-size: 0.76rem;">Insufficient or unreliable data. No prediction shown</span>'
+        pred_hr_sub = '<span style="color: #b91c1c; font-weight: 600; font-size: 0.76rem;">Insufficient or unreliable data. No prediction shown</span>'
+        pred_sv_sub = '<span style="color: #b91c1c; font-weight: 600; font-size: 0.76rem;">Insufficient or unreliable data. No prediction shown</span>'
+    else:
+        pred_sbp_sub = f"Twin Est: {ukf_res.predicted_obs[1]:.0f} mmHg"
+        pred_dbp_sub = f"Twin Est: {ukf_res.predicted_obs[2]:.0f} mmHg"
+        pred_hr_sub = f"Twin Est: {ukf_res.predicted_obs[0]:.0f} bpm"
+        pred_sv_sub = f"Cardiac Output: {(cur_sv * cur_hr / 1000):.2f} L/min"
+
+    # Prominent warning banner when data reliability is Low
+    if rel_level == "Low":
+        st.markdown(
+            f"""
+            <div style="background-color: #fef2f2; border: 1.5px solid #fecaca; border-radius: 12px; padding: 12px 16px; margin: 8px 0 16px 0; color: #b91c1c; font-size: 0.92rem;">
+                <b>⚠️ Insufficient or unreliable data. No prediction shown</b> — {rel_reason}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     # Top Vitals Cards Row (Never fixed: varies continuously over time)
     v_col1, v_col2, v_col3, v_col4 = st.columns(4)
@@ -415,7 +605,7 @@ with tabs[0]:
                 <div class="vital-title">Systolic BP</div>
                 <div class="vital-value">{cur_sbp:.0f}</div>
                 <div class="vital-unit">mmHg · Real-time</div>
-                <div class="vital-sub">Twin Est: {ukf_res.predicted_obs[1]:.0f} mmHg</div>
+                <div class="vital-sub">{pred_sbp_sub}</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -428,7 +618,7 @@ with tabs[0]:
                 <div class="vital-title">Diastolic BP</div>
                 <div class="vital-value">{cur_dbp:.0f}</div>
                 <div class="vital-unit">mmHg · Real-time</div>
-                <div class="vital-sub">Twin Est: {ukf_res.predicted_obs[2]:.0f} mmHg</div>
+                <div class="vital-sub">{pred_dbp_sub}</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -441,7 +631,7 @@ with tabs[0]:
                 <div class="vital-title">Heart Rate</div>
                 <div class="vital-value">{cur_hr:.0f}</div>
                 <div class="vital-unit">beats / min · Pulse</div>
-                <div class="vital-sub">Twin Est: {ukf_res.predicted_obs[0]:.0f} bpm</div>
+                <div class="vital-sub">{pred_hr_sub}</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -454,7 +644,7 @@ with tabs[0]:
                 <div class="vital-title">Stroke Volume</div>
                 <div class="vital-value">{cur_sv:.1f}</div>
                 <div class="vital-unit">mL / beat · Inotropy</div>
-                <div class="vital-sub">Cardiac Output: {(cur_sv * cur_hr / 1000):.2f} L/min</div>
+                <div class="vital-sub">{pred_sv_sub}</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -465,11 +655,11 @@ with tabs[0]:
         st.caption("Manually enter an external cuff blood pressure or heart rate reading to assimilate into the digital twin.")
         m_c1, m_c2, m_c3, m_c4 = st.columns([1, 1, 1, 1.2])
         with m_c1:
-            man_sbp = st.number_input("Systolic BP (mmHg)", min_value=70.0, max_value=240.0, value=float(cur_sbp), step=1.0, key="man_sbp_input")
+            man_sbp = st.number_input("Systolic BP (mmHg)", min_value=60.0, max_value=260.0, value=float(np.clip(cur_sbp, 60.0, 260.0)), step=1.0, key="man_sbp_input")
         with m_c2:
-            man_dbp = st.number_input("Diastolic BP (mmHg)", min_value=40.0, max_value=150.0, value=float(cur_dbp), step=1.0, key="man_dbp_input")
+            man_dbp = st.number_input("Diastolic BP (mmHg)", min_value=30.0, max_value=180.0, value=float(np.clip(cur_dbp, 30.0, 180.0)), step=1.0, key="man_dbp_input")
         with m_c3:
-            man_hr = st.number_input("Heart Rate (bpm)", min_value=35.0, max_value=210.0, value=float(cur_hr), step=1.0, key="man_hr_input")
+            man_hr = st.number_input("Heart Rate (bpm)", min_value=30.0, max_value=220.0, value=float(np.clip(cur_hr, 30.0, 220.0)), step=1.0, key="man_hr_input")
         with m_c4:
             st.write("")
             st.write("")
@@ -489,6 +679,13 @@ with tabs[0]:
     elif div_res.status == "Watch":
         badge_class = "badge-watch"
 
+    if rel_level == "High":
+        rel_badge = '<span style="background-color: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; padding: 5px 12px; border-radius: 16px; font-size: 0.82rem; font-weight: 700;">🟢 Data Reliability: High</span>'
+    elif rel_level == "Medium":
+        rel_badge = '<span style="background-color: #fef3c7; color: #92400e; border: 1px solid #fcd34d; padding: 5px 12px; border-radius: 16px; font-size: 0.82rem; font-weight: 700;">🟡 Data Reliability: Medium</span>'
+    else:
+        rel_badge = '<span style="background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; padding: 5px 12px; border-radius: 16px; font-size: 0.82rem; font-weight: 700;">🔴 Data Reliability: Low</span>'
+
     st.markdown(
         f"""
         <div style="background-color: #ffffff; border: 1.5px solid #fecdd3; border-radius: 16px; padding: 20px 24px; box-shadow: 0 4px 14px rgba(225, 29, 72, 0.05); margin-bottom: 20px;">
@@ -501,7 +698,8 @@ with tabs[0]:
                         Live comparison of observed telemetry vs twin-predicted hemodynamics (Mahalanobis Innovation Distance)
                     </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    {rel_badge}
                     <span style="font-size: 0.85rem; color: #64748b;">Clinical Status:</span>
                     <span class="{badge_class}" style="font-size: 0.95rem; padding: 6px 16px;">
                         {div_res.status}
@@ -677,7 +875,13 @@ with tabs[0]:
         )
         st.dataframe(ref_df, hide_index=True, use_container_width=True)
 
-        st.dataframe(ref_df, hide_index=True, use_container_width=True)
+    # -------------------------------------------------------------------------
+    # PATIENT SESSION TIMELINE (Full Session Trajectory & Hover Details)
+    # -------------------------------------------------------------------------
+    st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+    st.markdown("### 📈 Patient Session Timeline")
+    st.caption("Full session trajectory: continuous telemetry readings, clinical status changes (Normal/Watch/Significant), injected anomalies, what-if simulations, and sensor dropouts with hover inspection.")
+    st.plotly_chart(build_patient_timeline_figure(twin_mgr), use_container_width=True)
 
 
 # =============================================================================
@@ -994,6 +1198,16 @@ with tabs[3]:
         current_cov=ukf_res.state_cov,
     )
 
+    with scen_col1:
+        st.write("")
+        if st.button("📌 Log Scenario to Timeline", key="log_whatif_scenario_btn", help="Register this counterfactual scenario onto the patient timeline"):
+            twin_mgr.log_whatif_event(
+                whatif_res.scenario_name,
+                details=f"ΔSBP: {whatif_res.delta_sbp:+.1f} mmHg, ΔDBP: {whatif_res.delta_dbp:+.1f} mmHg, ΔHR: {whatif_res.delta_hr:+.0f} bpm",
+            )
+            st.success(f"Logged '{whatif_res.scenario_name}' onto Patient Session Timeline!")
+            st.rerun()
+
     with scen_col2:
         st.markdown("<b>Simulated Outcomes (Before vs After):</b>", unsafe_allow_html=True)
         m1, m2, m3, m4 = st.columns(4)
@@ -1116,32 +1330,218 @@ with tabs[4]:
         fig_contrib.update_xaxes(range=[0, 100], gridcolor="#f1f5f9")
         st.plotly_chart(fig_contrib, use_container_width=True)
 
-    # Historical Alert Log Table
+    # -------------------------------------------------------------------------
+    # EXPLAINABLE ALERTS LOG (Watch & Significant Events with Contributing Signals)
+    # -------------------------------------------------------------------------
     st.markdown("---")
-    st.markdown("<b>Recent Anomaly & Divergence Event Log</b>", unsafe_allow_html=True)
-    recent_steps = [s for s in twin_mgr.steps if s.divergence_result.status != "Normal"][-10:]
-    if recent_steps:
-        alert_rows = []
-        for s in recent_steps:
-            alert_rows.append(
-                {
-                    "Timestamp": s.timestamp.strftime("%H:%M:%S"),
-                    "Divergence Score": f"{s.divergence_result.divergence_score:.2f}",
-                    "Status": s.divergence_result.status,
-                    "Episode": s.episode,
-                    "Primary Driver": s.explanation_report.primary_driver_description,
-                    "Cross Agreement": s.divergence_result.detector_agreement,
-                }
+    st.markdown("### 🚨 Explainable Clinical Alerts Log")
+    st.caption("Complete historical record of all Watch and Significant divergence alerts stored with top contributing signals, physiological parameter shift explanations, and data reliability status.")
+
+    if twin_mgr.alerts_log:
+        st.markdown(f"<b>Session Alerts ({len(twin_mgr.alerts_log)} recorded):</b>", unsafe_allow_html=True)
+        for a in reversed(twin_mgr.alerts_log[-8:]):
+            st_color = "#e11d48" if a["status"] == "Significant" else "#d97706"
+            st_bg = "#fff1f2" if a["status"] == "Significant" else "#fffbeb"
+            rel_icon = "🟢" if a["reliability_level"] == "High" else ("🟡" if a["reliability_level"] == "Medium" else "🔴")
+
+            st.markdown(
+                f"""
+                <div style="background-color: #ffffff; border-left: 5px solid {st_color}; border-radius: 12px; padding: 14px 18px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); border-top: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                        <div>
+                            <span style="font-weight: 800; color: {st_color}; font-size: 1.05rem;">Alert #{a['id']} · {a['status']}</span>
+                            <span style="font-size: 0.85rem; color: #64748b; margin-left: 10px;">🕒 {a['timestamp']} · Episode: {a.get('episode', 'N/A')}</span>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span style="font-size: 0.82rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; background-color: #f8fafc; border: 1px solid #cbd5e1;">
+                                {rel_icon} Reliability: {a['reliability_level']}
+                            </span>
+                            <span style="font-size: 0.82rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; background-color: {st_bg}; color: {st_color};">
+                                D<sub>M</sub>: {a['divergence_score']:.2f}
+                            </span>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.94rem; color: #1e293b; margin-bottom: 8px;">
+                        <b>Parameter Shift Explanation:</b> {a['parameter_shift']}
+                    </div>
+                    <div style="display: flex; gap: 24px; font-size: 0.85rem; color: #475569; flex-wrap: wrap; background-color: #f8fafc; padding: 8px 12px; border-radius: 8px;">
+                        <div><b>Top Contributing Signals:</b> {a['top_signals']}</div>
+                        <div><b>Cross Agreement:</b> {a.get('detector_agreement', 'N/A')}</div>
+                        <div><b>Reliability Note:</b> {a.get('reliability_reason', 'Nominal')}</div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
             )
-        st.dataframe(pd.DataFrame(alert_rows), hide_index=True, use_container_width=True)
+
+        with st.expander("📋 View All Recorded Alerts as Table", expanded=False):
+            alert_table_data = [
+                {
+                    "Alert #": a["id"],
+                    "Time": a["timestamp"],
+                    "Status": a["status"],
+                    "Divergence Score": f"{a['divergence_score']:.2f}",
+                    "Top Contributing Signals": a["top_signals"],
+                    "Parameter Shift Explanation": a["parameter_shift"],
+                    "Reliability Level": a["reliability_level"],
+                    "Detector Agreement": a["detector_agreement"],
+                }
+                for a in reversed(twin_mgr.alerts_log)
+            ]
+            st.dataframe(pd.DataFrame(alert_table_data), hide_index=True, use_container_width=True)
     else:
-        st.info("No significant divergence events recorded in recent telemetry.")
+        st.info("No Watch or Significant alerts recorded in this session yet. As the synthetic stream encounters anomalies or episodes, alerts with physiological explanations will be logged here.")
 
 
 # =============================================================================
-# TAB 6: Care Circle & User Reminders
+# TAB 6: Validation Dashboard
 # =============================================================================
 with tabs[5]:
+    st.markdown("### 📊 Cohort Validation Dashboard")
+    st.caption("Systematic empirical evaluation of CardioTwin X across 30 held-out synthetic patients.")
+
+    # Visible Note
+    st.info(f"ℹ️ **Validation Methodology Notice:** {VALIDATION_NOTE}")
+
+    val_summary = get_cached_validation_summary()
+
+    # (a) One-step-ahead MAE and RMSE for SBP, DBP, HR
+    st.markdown("#### (a) One-Step-Ahead Predictive Accuracy (MAE & RMSE)")
+    vm_c1, vm_c2, vm_c3, vm_c4 = st.columns(4)
+    with vm_c1:
+        st.metric(
+            "SBP MAE / RMSE",
+            f"{val_summary.overall_mae['SBP']:.2f} / {val_summary.overall_rmse['SBP']:.2f} mmHg",
+            help="Mean Absolute Error and Root Mean Squared Error for Systolic Blood Pressure",
+        )
+    with vm_c2:
+        st.metric(
+            "DBP MAE / RMSE",
+            f"{val_summary.overall_mae['DBP']:.2f} / {val_summary.overall_rmse['DBP']:.2f} mmHg",
+            help="Mean Absolute Error and Root Mean Squared Error for Diastolic Blood Pressure",
+        )
+    with vm_c3:
+        st.metric(
+            "HR MAE / RMSE",
+            f"{val_summary.overall_mae['HR']:.2f} / {val_summary.overall_rmse['HR']:.2f} bpm",
+            help="Mean Absolute Error and Root Mean Squared Error for Heart Rate",
+        )
+    with vm_c4:
+        st.metric(
+            "90% Band Coverage",
+            f"{val_summary.observed_coverage_90:.1f}%",
+            delta=f"{val_summary.observed_coverage_90 - 90.0:+.1f}% vs nominal",
+            help="Percentage of true observations falling within the twin's 90% predictive uncertainty envelope",
+        )
+
+    st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+
+    # (b) and (c) Two Columns: Calibration Curve & Anomaly Detection Benchmark
+    v_col1, v_col2 = st.columns([1.8, 2.0])
+
+    with v_col1:
+        st.markdown("#### (b) Uncertainty Calibration (Expected vs Observed Coverage)")
+        fig_cal = go.Figure()
+        exp_cov = val_summary.calibration_curve["expected"]
+        obs_cov = val_summary.calibration_curve["observed"]
+
+        fig_cal.add_trace(
+            go.Scatter(
+                x=[0, 100], y=[0, 100],
+                mode="lines",
+                line=dict(color="#94a3b8", dash="dash"),
+                name="Ideal Calibration (y=x)",
+            )
+        )
+        fig_cal.add_trace(
+            go.Scatter(
+                x=exp_cov, y=obs_cov,
+                mode="lines+markers",
+                line=dict(color="#e11d48", width=2.5),
+                marker=dict(size=8, color="#be123c"),
+                name="CardioTwin X Ensemble Coverage",
+            )
+        )
+        fig_cal.update_layout(
+            height=340,
+            margin=dict(l=30, r=20, t=20, b=30),
+            xaxis_title="Nominal / Expected Confidence Level (%)",
+            yaxis_title="Empirical Observed Coverage (%)",
+            plot_bgcolor="#ffffff",
+            paper_bgcolor="#ffffff",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0),
+        )
+        fig_cal.update_xaxes(range=[40, 100], gridcolor="#f1f5f9")
+        fig_cal.update_yaxes(range=[40, 100], gridcolor="#f1f5f9")
+        st.plotly_chart(fig_cal, use_container_width=True)
+        st.caption(f"Uncertainty calibration: Nominal 90% predictive band achieved **{val_summary.observed_coverage_90:.1f}%** observed coverage across all 30 patients.")
+
+    with v_col2:
+        st.markdown("#### (c) Anomaly Detection Benchmark (Divergence Engine vs IsolationForest)")
+        div_m = val_summary.divergence_metrics
+        ifo_m = val_summary.isoforest_metrics
+
+        fig_bench = go.Figure()
+        fig_bench.add_trace(
+            go.Bar(
+                name="Divergence Engine (Innovation)",
+                x=["Detection Rate (TPR %)", "False Alarm Rate (FPR %)", "Detection Delay (steps)"],
+                y=[div_m["tpr_pct"], div_m["fpr_pct"], div_m["mean_delay_steps"]],
+                marker_color="#e11d48",
+            )
+        )
+        fig_bench.add_trace(
+            go.Bar(
+                name="IsolationForest (Residuals)",
+                x=["Detection Rate (TPR %)", "False Alarm Rate (FPR %)", "Detection Delay (steps)"],
+                y=[ifo_m["tpr_pct"], ifo_m["fpr_pct"], ifo_m["mean_delay_steps"]],
+                marker_color="#3b82f6",
+            )
+        )
+        fig_bench.update_layout(
+            barmode="group",
+            height=340,
+            margin=dict(l=30, r=20, t=20, b=30),
+            yaxis_title="Metric Value",
+            plot_bgcolor="#ffffff",
+            paper_bgcolor="#ffffff",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1.0),
+        )
+        fig_bench.update_yaxes(gridcolor="#f1f5f9")
+        fig_bench.update_xaxes(gridcolor="#f1f5f9")
+        st.plotly_chart(fig_bench, use_container_width=True)
+        st.caption(f"Divergence Engine achieves {div_m['tpr_pct']:.1f}% TPR ({div_m['fpr_pct']:.1f}% FPR, delay: {div_m['mean_delay_steps']:.1f} steps) vs IsolationForest {ifo_m['tpr_pct']:.1f}% TPR ({ifo_m['fpr_pct']:.1f}% FPR).")
+
+    st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+
+    # (d) Table of metrics per patient preset
+    st.markdown("#### (d) Validation Metrics Stratified by Patient Preset")
+    st.dataframe(val_summary.preset_table, hide_index=True, use_container_width=True)
+
+    # Optional Public Dataset Loader
+    st.markdown("---")
+    st.markdown("#### 📂 Public Benchmark Dataset Loader (PTB-XL / BIDMC)")
+    pub_info = val_summary.public_dataset_status
+    if pub_info.get("loaded", False):
+        st.success(f"Loaded public dataset: {pub_info.get('dataset_name')} ({pub_info.get('records_count')} records) from {pub_info.get('path')}")
+    else:
+        st.warning(f"📁 **public dataset not loaded** — {pub_info.get('message', 'No local benchmark files found.')}")
+        st.caption("Upload or place `ptbxl_database.csv` or `bidmc_data.csv` in the project root to benchmark against real-world clinical recordings.")
+
+    uploaded_file = st.file_uploader("Upload Public Dataset CSV (e.g. PTB-XL metadata or BIDMC waveform)", type=["csv"], key="public_dataset_uploader")
+    if uploaded_file is not None:
+        try:
+            df_uploaded = pd.read_csv(uploaded_file, nrows=100)
+            st.success(f"Uploaded public dataset preview: {uploaded_file.name} ({len(df_uploaded)} rows previewed, {len(df_uploaded.columns)} columns).")
+            st.dataframe(df_uploaded.head(5), use_container_width=True)
+        except Exception as e:
+            st.error(f"Error reading uploaded dataset: {e}")
+
+
+# =============================================================================
+# TAB 7: Care Circle & User Reminders
+# =============================================================================
+with tabs[6]:
     st.markdown("### Care Circle & Reminders")
     st.caption("Coordinate cardiovascular telemetry oversight with designated clinicians and care contacts.")
 
@@ -1214,15 +1614,13 @@ with tabs[5]:
 
 
 # =============================================================================
-# TAB 7: About CardioTwin X
+# TAB 8: About CardioTwin X
 # =============================================================================
-with tabs[6]:
+with tabs[7]:
     st.markdown("### About CardioTwin X")
     st.markdown(
         """
-        **CardioTwin X** is an adaptive, simulation-driven cardiovascular digital twin engineered in pure Python.
-        It continuously assimilates non-invasive telemetry (Heart Rate, Systolic BP, Diastolic BP) and estimates 
-        unobserved, internal hemodynamic parameters in real-time.
+        CardioTwin X is a practical, transparent, interactive implementation of a cardiac digital twin using synthetic data and a simplified physiological model. It does not claim to be a novel invention or a clinical tool.
         """
     )
 

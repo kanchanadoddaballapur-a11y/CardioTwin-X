@@ -103,6 +103,27 @@ A parametric 3D representation of the cardiac ventricles and ascending aortic ar
 - Transitions to warning color palettes during "Significant" divergence.
 - Pulsation and dimensional scaling dynamically follow heart rate and stroke volume.
 
+### 7. Cohort Validation Engine (`twin/validation.py`) & Validation Dashboard
+Systematic empirical evaluation across 30 held-out synthetic test subjects (10 healthy, 10 hypertensive, 10 elderly):
+- **Predictive Accuracy:** One-step-ahead MAE and RMSE metrics for SBP, DBP, and HR.
+- **Uncertainty Calibration:** Nominal vs empirical coverage curves ($50\%$ to $95\%$), verifying the 90% predictive uncertainty band.
+- **Anomaly Detection Benchmark:** Evaluates True Positive Rate (TPR / Detection Rate), False Positive Rate (FPR / False Alarm Rate), and Detection Delay (steps to alarm) comparing the Innovation Divergence Engine against an `IsolationForest` residual baseline.
+- **Preset Stratified Table:** Breakdown of performance across clinical phenotypes.
+- **Public Benchmark Loader:** Automatically searches for real-world datasets (`ptbxl_database.csv`, `bidmc_data.csv`) or alerts `"public dataset not loaded"`.
+- Visible notice: *"Computed on synthetic data. Validates the method, not clinical accuracy."*
+
+### 8. Data Reliability Indicator & Uncertainty Warnings
+Continuous telemetry quality scoring into **High**, **Medium**, or **Low** based on:
+1. Recent window valid readings ratio (sensor dropout frequency).
+2. Immediate sensor dropout on the current reading frame.
+3. Parameter covariance size ($\text{Tr}(P)$ trace stability metric).
+4. Innovation divergence persistence.
+When **Low**, the UI suspends model predictions, replaces metrics with `"Insufficient or unreliable data. No prediction shown"`, and surfaces an explanatory rationale.
+
+### 9. Patient Session Timeline & Explainable Alerts Log
+- **Timeline View:** Interactive dual-row Plotly visualization tracing the entire session with observed SBP/DBP/HR, clinical status changes, injected anomalies, what-if experiments run, and sensor dropouts with detailed hover cards.
+- **Explainable Alerts Log:** Every Watch and Significant divergence alert is archived with its top contributing signals (% innovation), physiological parameter shift explanation, and data reliability status.
+
 ---
 
 ## Project Structure
@@ -110,7 +131,7 @@ A parametric 3D representation of the cardiac ventricles and ascending aortic ar
 ```
 cardo/
 ├── cardiotwin/
-│   ├── app.py                  # Streamlit application (all 7 tabs, theme styling)
+│   ├── app.py                  # Streamlit application (all 8 tabs, theme styling)
 │   ├── requirements.txt        # Package dependencies
 │   ├── README.md               # Documentation
 │   ├── twin/
@@ -121,13 +142,15 @@ cardo/
 │   │   ├── divergence.py       # Mahalanobis divergence, ensemble & IsolationForest
 │   │   ├── whatif.py           # Counterfactual scenario simulator
 │   │   ├── explain.py          # Plain-English parameter shift explainability
-│   │   └── state.py            # Runtime session manager & streaming coordinator
+│   │   ├── state.py            # Runtime session manager, timeline & reliability
+│   │   └── validation.py       # 30-patient cohort validation & public dataset loader
 │   └── tests/
 │       ├── __init__.py
 │       ├── test_model.py       # Tests for 120/80 baseline, baroreflex, bounds
 │       ├── test_estimator.py   # Tests for UKF convergence & missing data
 │       ├── test_divergence.py  # Tests for anomaly response & ensemble bands
-│       └── test_app.py         # Tests for session state & what-if scenarios
+│       ├── test_app.py         # Tests for session state & what-if scenarios
+│       └── test_validation.py  # Tests for cohort benchmark, reliability & alerts
 ├── app.py                      # Root launcher script
 ├── requirements.txt            # Root requirements
 └── README.md                   # Root documentation
@@ -163,15 +186,22 @@ Open your browser at `http://localhost:8501`.
 
 ### Run Unit Tests
 ```bash
-pytest cardiotwin/tests/
+pytest -o pythonpath=. cardiotwin/tests/
 ```
-All 16 unit and integration tests will execute, validating:
+All 20 unit and integration tests will execute, validating:
 1. Physiological model defaults ($120/80$ mmHg $\pm 2$ mmHg).
 2. Baroreflex response to hypertension and hypotension.
 3. UKF parameter convergence on noiseless synthetic data.
 4. Estimator stability during sensor dropouts (`NaN`).
 5. Divergence score spikes after injected vascular anomalies.
 6. 50-twin Monte Carlo ensemble predictive uncertainty bands.
+7. What-If counterfactual scenario evaluations.
+8. Baseline calibration with skippable default workflows.
+9. Non-prescriptive user reminders and plain-English divergence explanation strings.
+10. 30-patient cohort validation metrics (MAE, RMSE, uncertainty coverage curve).
+11. Anomaly detection benchmark comparing Divergence Engine vs IsolationForest.
+12. Data Reliability scoring (High/Medium/Low) and prediction suspension on dropouts.
+13. Historical explainable alert logging for Watch/Significant episodes.
 7. What-If counterfactual scenario evaluations.
 8. Baseline calibration with skippable default workflows.
 9. Non-prescriptive user reminders and plain-English divergence explanation strings.

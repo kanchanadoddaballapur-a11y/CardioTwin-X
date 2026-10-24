@@ -79,8 +79,11 @@ class TwinSessionState:
 
         # Step history buffer
         self.steps: List[TwinCycleStep] = []
+        self.whatif_events: List[Dict[str, Any]] = []
+        self.alerts_log: List[Dict[str, Any]] = []
 
         # Playback control
+
         self.is_live: bool = True
         self.playback_speed: float = 1.0  # seconds between ticks
 
@@ -159,7 +162,136 @@ class TwinSessionState:
             is_anomaly=is_anomaly,
         )
         self.steps.append(step_bundle)
+
+        # 4. Check & record explainable alert if status is Watch or Significant
+        rel_level, rel_reason, _ = self.compute_data_reliability()
+        if div_res.status in ["Watch", "Significant"]:
+            top_sig_str = ", ".join([
+                f"{k}: {v:.0f}%"
+                for k, v in sorted(
+                    div_res.signal_contributions.items(),
+                    key=lambda x: x[1],
+                    reverse=True,
+                )
+            ])
+            self.alerts_log.append({
+                "id": len(self.alerts_log) + 1,
+                "step": step_bundle.step_idx,
+                "timestamp": row_time.strftime("%H:%M:%S"),
+                "status": div_res.status,
+                "divergence_score": float(div_res.divergence_score),
+                "top_signals": top_sig_str,
+                "signal_contributions": div_res.signal_contributions,
+                "parameter_shift": exp_res.primary_driver_description or exp_res.summary,
+                "reliability_level": rel_level,
+                "reliability_reason": rel_reason,
+                "detector_agreement": div_res.detector_agreement,
+                "episode": episode,
+                "detailed_explanation": exp_res.detailed_explanation,
+            })
+
         return step_bundle
+
+    def log_whatif_event(self, scenario_name: str, details: str = "") -> None:
+        """Log a user counterfactual experiment onto the timeline."""
+        latest = self.get_latest_step()
+        ts = latest.timestamp if latest else datetime.now()
+        self.whatif_events.append({
+            "step": latest.step_idx if latest else len(self.steps),
+            "timestamp": ts,
+            "scenario": scenario_name,
+            "details": details,
+        })
+
+    def compute_data_reliability(self, window_size: int = 10) -> Tuple[str, str, Dict[str, Any]]:
+        """Evaluate telemetry data reliability: High, Medium, or Low.
+
+        Evaluates:
+        1. Number of recent valid readings in window (dropout ratio).
+        2. Immediate sensor dropout on current frame.
+        3. Parameter covariance size: Tr(P) trace metric.
+        4. Divergence persistence count.
+
+        Returns:
+            Tuple of (level: 'High'|'Medium'|'Low', explanation: str, metrics: dict).
+        """
+        if not self.steps:
+            return "Medium", "Initializing stream telemetry...", {}
+
+        recent = self.steps[-window_size:]
+        n_recent = len(recent)
+        valid_count = sum(1 for s in recent if s.observed is not None and not np.any(np.isnan(s.observed)))
+        valid_ratio = valid_count / max(n_recent, 1)
+
+        latest = self.steps[-1]
+        is_current_missing = (latest.observed is None) or np.any(np.isnan(latest.observed))
+
+        cov_trace = float(np.trace(latest.ukf_result.state_cov))
+        div_persistence = latest.divergence_result.consecutive_high_count
+        div_score = latest.divergence_result.divergence_score
+
+        metrics = {
+            "valid_count": valid_count,
+            "valid_ratio": valid_ratio,
+            "is_current_missing": is_current_missing,
+            "cov_trace": cov_trace,
+            "div_persistence": div_persistence,
+            "div_score": div_score,
+        }
+
+        # 1. Low Reliability criteria
+        if is_current_missing:
+            return (
+                "Low",
+                "Sensor telemetry is currently offline (missing signal dropout).",
+                metrics,
+            )
+        if valid_ratio < 0.60:
+            return (
+                "Low",
+                f"Severe signal dropout: only {valid_count}/{n_recent} valid readings in recent window.",
+                metrics,
+            )
+        if cov_trace > 85.0:
+            return (
+                "Low",
+                f"High estimator uncertainty: parameter covariance trace ({cov_trace:.1f}) exceeds stability threshold.",
+                metrics,
+            )
+        if div_persistence >= 5 or div_score > 5.0:
+            return (
+                "Low",
+                f"Extreme prolonged divergence (persistence: {div_persistence} beats, score: {div_score:.1f}).",
+                metrics,
+            )
+
+        # 2. Medium Reliability criteria
+        if valid_ratio < 0.85:
+            return (
+                "Medium",
+                f"Intermittent telemetry: {n_recent - valid_count} frame dropouts in last {n_recent} readings.",
+                metrics,
+            )
+        if cov_trace > 45.0:
+            return (
+                "Medium",
+                f"Moderate parameter uncertainty (covariance trace: {cov_trace:.1f}) during dynamic adaptation.",
+                metrics,
+            )
+        if div_persistence >= 2:
+            return (
+                "Medium",
+                f"Elevated innovation divergence being monitored for persistence ({div_persistence} steps).",
+                metrics,
+            )
+
+        # 3. High Reliability
+        return (
+            "High",
+            "Continuous valid telemetry with well-conditioned posterior covariance.",
+            metrics,
+        )
+
 
     def get_latest_step(self) -> Optional[TwinCycleStep]:
         """Return the most recent processed step."""
