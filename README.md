@@ -253,7 +253,7 @@ flowchart TD
 A comprehensive 9-slide technical presentation deck covering the project background, problem formulation, clinical use cases, mathematical derivations, divergence algorithms, 30-patient cohort validation outcomes, and roadmap is provided in both PDF and PPTX formats.
 
 ### Download Public Presentation Deliverables:
-- 📄 **Presentation / Concept Document (PDF - Google Drive):** [https://drive.google.com/file/d/1dg_ermdvzWejSIxMOYWh7rDlK0iRY1K-/view?usp=drivesdk](https://drive.google.com/file/d/1dg_ermdvzWejSIxMOYWh7rDlK0iRY1K-/view?usp=drivesdk)
+- 📄 **Presentation / Concept Document (PDF - Google Drive):https://drive.google.com/file/d/1W_PExCcxUKbmh4vjuUGD52FFjsK7Kwqp/view?usp=drivesdk
 - 📊 **Presentation in PowerPoint (PPTX) Format:** [CardioTwin_Project_Presentation.pptx](docs/presentation/CardioTwin_Project_Presentation.pptx)
 
 ### Slide Summary:
