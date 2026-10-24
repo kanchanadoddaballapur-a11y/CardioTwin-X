@@ -50,10 +50,9 @@ CardioTwin X introduces a **Mahalanobis Innovation Divergence Engine** to detect
 | Name | Role | Email | GitHub / Profiles |
 |---|---|---|---|
 | **Kanchana A** | Lead Author & System Architect | [kanchanadoddaballapur@gmail.com](mailto:kanchanadoddaballapur@gmail.com) | [@kanchanadoddaballapur-a11y](https://github.com/kanchanadoddaballapur-a11y) |
-| **Sinchana** | ML & Digital Twin Developer | [sinchanaralankar@gmail.com](mailto:sinchanaralankar@gmail.com) | [@sinchanaralankar-droid](https://github.com/sinchanaralankar-droid) (USN: 1TE25CS281) |
-| **Bhanushree M** | Research & Development Contributor | Contact via Team | BMS Institute of Technology and Management |
-| **Bhuvana H R** | Research & Development Contributor | Contact via Team | BMS Institute of Technology and Management |
-
+| **Sinchana** | ML & Digital Twin Developer | [sinchanaralankar@gmail.com](mailto:sinchanaralankar@gmail.com) | [@sinchanaralankar-droid](https://github.com/sinchanaralankar-droid)  |
+| **Bhanushree M** | Research & Development Contributor | [gbm3914@gmail.com] (mailto:gbm3914@gmail.com)| (https://github.com/gbmgam) |
+| **Bhuvana H R** | Research & Development Contributor | [bhugowsharam@gmail.com] (mailto:bhugowsharam@gmail.com) |(https://github.com/bhuvana252007) |
 ---
 
 ## 3. College / Incubator Information
