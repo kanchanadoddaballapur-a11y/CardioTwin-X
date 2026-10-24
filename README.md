@@ -22,7 +22,7 @@ All mandatory submission deliverables specified in the evaluation requirements a
 | 5 | **Healthcare Use Case** | ✅ Included | [Section 5](#5-healthcare-use-cases--clinical-impact) | [Clinical Scenarios & Impact](#5-healthcare-use-cases--clinical-impact) |
 | 6 | **Technical Stack** | ✅ Included | [Section 6](#6-technical-stack) | [Tech Stack Matrix](#6-technical-stack) |
 | 7 | **AI/ML Model or Framework Details** | ✅ Included | [Section 7](#7-aiml-model--framework-details) | [Physiological & ML Formulations](#7-aiml-model--framework-details) |
-| 8 | **15-20 Min Unlisted Demo Video** | ✅ Included | [Section 8](#8-demonstration-video-unlisted-youtube) | [Watch Unlisted Demo Video](https://youtu.be/kU8X7m6Lz9w) |
+| 8 | **15-20 Min Unlisted Demo Video** | ✅ Included | [Section 8](#8-demonstration-video) | [Watch Unlisted Demo Video](https://drive.google.com/file/d/1m8SrAc0ggu6v4r3aagNN854nd9m0T5Cd/view?usp=drivesdk) |
 | 9 | **Open-source License Details** | ✅ Included | [Section 9](#9-open-source-license-details) | [LICENSE](LICENSE) |
 | 10 | **Architecture Diagram (PDF / PPT)** | ✅ Included | [Section 10](#10-architecture-diagram-pdf--ppt-formats) | [Download PDF](docs/architecture/CardioTwin_Architecture_Diagram.pdf) • [Download PPTX](docs/architecture/CardioTwin_Architecture_Diagram.pptx) |
 | 11 | **Presentation (PDF / PPT)** | ✅ Included | [Section 11](#11-presentation-pdf--ppt-formats) | [View PDF (Google Drive)](https://drive.google.com/file/d/1W_PExCcxUKbmh4vjuUGD52FFjsK7Kwqp/view?usp=drivesdk) • [Download PPTX]([docs/presentation/CardioTwin_Project_Presentation.pptx](https://drive.google.com/file/d/1W_PExCcxUKbmh4vjuUGD52FFjsK7Kwqp/view?usp=drivesdk)) |
@@ -180,19 +180,10 @@ A comprehensive **15-20 minute demonstration video** has been produced, uploaded
 
 [![CardioTwin X Demo Video](https://img.shields.io/badge/YouTube-Watch%20Demo%20Video%20(18:45)-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://youtu.be/kU8X7m6Lz9w)
 
-> 🔗 **Direct Video URL:** [https://youtu.be/kU8X7m6Lz9w](https://youtu.be/kU8X7m6Lz9w)  
+> 🔗 **Direct Video URL:** [https://drive.google.com/file/d/1m8SrAc0ggu6v4r3aagNN854nd9m0T5Cd/view?usp=drivesdk)] 
 > *(Unlisted Video — publicly accessible via link with zero login or permission restrictions)*
 
-### Video Chapters & Timestamp Directory
-- `00:00 - 02:15` : **Executive Overview & Motivation:** CVD statistics, limitations of surface cuff telemetry.
-- `02:15 - 05:40` : **Mathematical Hemodynamics:** 3-Element Windkessel ODE derivation, compliance, resistance, baroreflex feedback.
-- `05:40 - 09:20` : **Unscented Kalman Filter (UKF):** Deterministic sigma points, nonlinear state tracking, and sensor dropout (`NaN`) recovery.
-- `09:20 - 12:45` : **Clinical UI Walkthrough & 3D Heart:** Live telemetry streaming, dynamic pressure-colored ventricle mesh and aortic pulsation.
-- `12:45 - 15:30` : **Innovation Divergence Engine:** Mahalanobis distance calculation, persistence filter, and injected vascular crisis detection.
-- `15:30 - 18:10` : **What-If Counterfactual Lab:** Testing pharmacological vasodilation, high salt intake, and exercise scenarios.
-- `18:10 - 18:45` : **Cohort Validation Benchmark & Summary:** 30-patient empirical results, open-source deliverables, and future roadmap.
 
----
 
 ## 9. Open-Source License Details
 
